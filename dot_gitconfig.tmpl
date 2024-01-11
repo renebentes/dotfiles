@@ -8,6 +8,7 @@
 [user]
     name = "{{ .name }}"
     email = "{{ .email }}"
+    signingkey = "{{ .key }}"
 
 [commit]
     template = ~/.gitmessage.txt
@@ -149,3 +150,9 @@
     gpgsign = true
 [init]
     defaultBranch = main
+[gpg]
+    {{- if eq .chezmoi.os "windows" }}
+    program = C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe
+    {{- else if (and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft")) }}
+    program = /mnt/c/Program\\ Files\\ \\(x86\\)/GnuPG/bin/gpg.exe
+    {{- end }}

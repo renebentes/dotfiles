@@ -9,7 +9,9 @@
 
 {{- $email := promptStringOnce . "email" "Your email address" -}}
 {{- $name := promptStringOnce . "name" "Your name" -}}
+{{- $key := promptStringOnce . "key" "Your GPG key" }}
 
 [data]
     email = {{ $email | quote }}
     name = {{ $name | quote }}
+    key = {{ $key | quote }}
