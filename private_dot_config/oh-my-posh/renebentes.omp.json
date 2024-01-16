@@ -1,0 +1,99 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "blocks": [
+    {
+      "alignment": "left",
+      "segments": [
+        {
+          "background": "#6272a4",
+          "foreground": "#f8f8f2",
+          "leading_diamond": "\ue0b6",
+          "style": "diamond",
+          "type": "os"
+        },
+        {
+          "background": "#61afef",
+          "foreground": "#fff",
+          "powerline_symbol": "\ue0b0",
+          "properties": {
+            "style": "folder"
+          },
+          "style": "powerline",
+          "type": "path"
+        },
+        {
+          "background": "#2fda4e",
+          "background_templates": [
+            "{{ if or (.Working.Changed) (.Staging.Changed) }}#ffeb95{{ end }}",
+            "{{ if and (gt .Ahead 0) (gt .Behind 0) }}#f26d50{{ end }}",
+            "{{ if gt .Ahead 0 }}#b388ff{{ end }}",
+            "{{ if gt .Behind 0 }}#f17c37{{ end }}"
+          ],
+          "foreground": "#333",
+          "powerline_symbol": "\ue0b0",
+          "properties": {
+            "fetch_stash_count": true,
+            "fetch_status": true,
+            "fetch_upstream_icon": true,
+            "fetch_worktree_count": true
+          },
+          "style": "powerline",
+          "type": "git"
+        },
+        {
+          "background": "#5c2d91",
+          "foreground": "#fff",
+          "powerline_symbol": "\ue0b0",
+          "style": "powerline",
+          "template": " \ue77f {{ if .Unsupported }}\uf071{{ else }}{{ .Full }}{{ end }}",
+          "type": "dotnet"
+        },
+        {
+          "background": "#777bb4",
+          "foreground": "#fff",
+          "powerline_symbol": "\ue0b0",
+          "style": "powerline",
+          "template": " {{ if .Error }}[PHP]{{ .Error }}{{ else }}\ue73d {{ .Full }}{{ end }} ",
+          "type": "php"
+        },
+        {
+          "background": "#6ca35e",
+          "foreground": "#fff",
+          "powerline_symbol": "\ue0b0",
+          "properties": {
+            "fetch_package_manager": true,
+            "npm_icon": "<#cc3a3a>\ue71e</>",
+            "yarn_icon": "<#348cba>\uf61a</>"
+          },
+          "style": "powerline",
+          "template": " \uf898 {{ if .PackageManagerIcon }}{{ .PackageManagerIcon }} {{ end }}{{ .Full }} ",
+          "type": "node"
+        },
+        {
+          "background": "#c3002f",
+          "foreground": "#fff",
+          "powerline_symbol": "\ue0b0",
+          "style": "powerline",
+          "type": "angular"
+        },
+        {
+          "type": "status",
+          "style": "diamond",
+          "foreground": "#ffffff",
+          "background": "#00897b",
+          "background_templates": ["{{ if gt .Code 0 }}#e91e63{{ end }}"],
+          "trailing_diamond": "\ue0b4",
+          "template": " {{ if gt .Code 0 }}\uf525{{ else }}\uf469{{ end }} ",
+          "properties": {
+            "always_enabled": true
+          }
+        }
+      ],
+      "type": "prompt"
+    }
+  ],
+  "console_title_template": "{{.Folder}}{{if .Root}} :: root{{end}} :: {{.Shell}}",
+  "final_space": true,
+  "osc99": true,
+  "version": 2
+}
