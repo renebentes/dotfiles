@@ -11,6 +11,12 @@
 {{- $name := promptStringOnce . "name" "Your name" -}}
 {{- $key := promptStringOnce . "key" "Your GPG key" }}
 
+{{ if eq .chezmoi.os "windows" -}}
+cd:
+    command: "pwsh"
+    args: ["-NoLogo", "-NoExit", "-Command", "& {Set-Location $env:HOMEPATH/.local/share/chezmoi}"]
+{{ end -}}
+
 data:
     email: {{ $email | quote }}
     name: {{ $name | quote }}
