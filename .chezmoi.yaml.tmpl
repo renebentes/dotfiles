@@ -1,17 +1,17 @@
-# ~/.local/share/chezmoi/.chezmoi.toml.tmpl
+# ~/.local/share/chezmoi/.chezmoi.yaml.tmpl
 # =============================================================================
 # Used to customize configuration when doing a `chezmoi init`.
 #
 # This template file will trigger prompts to fill-in machine-specific
 # templateable values. The resulting file is then created at
-# `~/.config/chezmoi/chezmoi.toml`
+# `~/.config/chezmoi/chezmoi.yaml`
 # See https://www.chezmoi.io/docs/how-to/
 
 {{- $email := promptStringOnce . "email" "Your email address" -}}
 {{- $name := promptStringOnce . "name" "Your name" -}}
 {{- $key := promptStringOnce . "key" "Your GPG key" }}
 
-[data]
-    email = {{ $email | quote }}
-    name = {{ $name | quote }}
-    key = {{ $key | quote }}
+data:
+    email: {{ $email | quote }}
+    name: {{ $name | quote }}
+    key: {{ $key | quote }}
