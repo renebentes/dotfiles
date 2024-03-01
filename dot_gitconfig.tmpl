@@ -129,7 +129,7 @@
     # or overly assertive (in general), yet still better than just --force.
     pushy = !"git push --force-with-lease"
 
-    sh= !"git log -n 16 --pretty=format:'%h %s' --no-merges | fzf | cut -c -7 | xargs -o git show"
+    sh= !"git log --pretty=format:'%h %s' --no-merges | fzf | cut -c -7 | xargs -o git show"
 
     ### SHELL SCRIPTING ALIASES ###
     # Get the current branch name
