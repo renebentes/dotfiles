@@ -23,8 +23,7 @@
 [log]
     decorate = full
     abbrevCommit = true
-[format]
-    pretty=format:%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset
+
 [alias]
     cr = clone --recursive
     ci = commit
@@ -62,7 +61,7 @@
     lg = log -n 20 --oneline
 
     # Show complete log with graph
-    lga = log --all --graph
+    lga = log --all --graph --decorate --format=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset'
 
     # Get working directory up to date
     up = !git fetch --prune && git pull --rebase && git submodule update --init --recursive
