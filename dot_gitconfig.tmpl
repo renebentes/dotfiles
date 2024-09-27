@@ -15,7 +15,12 @@
 
 [core]
     editor = code --wait
+    {{- if eq .chezmoi.os "windows" }}
     autocrlf = true
+    {{- else }}
+    autocrlf = false
+    {{- end }}
+
 [pull]
     ff = only
 [push]
