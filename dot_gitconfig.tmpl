@@ -18,7 +18,7 @@
     {{- if eq .chezmoi.os "windows" }}
     autocrlf = true
     {{- else }}
-    autocrlf = false
+    autocrlf = input
     {{- end }}
 
 [pull]
