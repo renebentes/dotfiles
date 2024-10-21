@@ -68,6 +68,9 @@
     cb = checkout -b
     swc = switch -c
 
+    # List only staged files
+    ls = diff --name-only --staged
+
     # Show top 20 commits
     lg = log -n 20 --oneline
 
