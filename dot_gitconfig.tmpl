@@ -182,3 +182,5 @@
     {{- else if (and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft")) }}
     program = /mnt/c/Program\\ Files\\ \\(x86\\)/GnuPG/bin/gpg.exe
     {{- end }}
+[checkout]
+    defaultRemote=origin
