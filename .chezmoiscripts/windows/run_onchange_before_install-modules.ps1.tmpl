@@ -6,8 +6,11 @@
 # Chezmoi will skip this script on other operating systems.
 #
 
+Import-Module PowerShellGet
+Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+
 {{ range .packages.windows.powershell -}}
-Install-Module -SkipPublisherCheck {{ . | quote }} -Scope CurrentUser
+Install-Module {{ . | quote }} -SkipPublisherCheck -Scope CurrentUser
 {{ end -}}
 
 {{- end }}
