@@ -1,5 +1,9 @@
 packages:
   windows:
+    powershell:
+      - Posh-Git
+      - PsFzf
+      - PsReadline
     winget:
       - Discord.Discord
       - Docker.DockerDesktop

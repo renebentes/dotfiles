@@ -1,0 +1,13 @@
+{{ if eq .chezmoi.os "windows" -}}
+# ~/.local/share/chezmoi/run_onchange_before_install-packages.ps1
+# ============================================================================
+# Runs before `chezmoi apply` to install packages dependencies.
+#
+# Chezmoi will skip this script on other operating systems.
+#
+
+{{ range .packages.windows.powershell -}}
+Install-Module -SkipPublisherCheck {{ . | quote }} -Scope CurrentUser
+{{ end -}}
+
+{{- end }}
