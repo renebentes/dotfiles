@@ -2,8 +2,8 @@ packages:
   windows:
     powershell:
       - Posh-Git
-      - PsFzf
       - PsReadline
+      - PsFzf
     winget:
       - Discord.Discord
       - Docker.DockerDesktop
