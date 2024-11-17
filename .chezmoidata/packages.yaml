@@ -1,0 +1,21 @@
+packages:
+  windows:
+    winget:
+      - Discord.Discord
+      - Docker.DockerDesktop
+      - Figma.Figma
+      - Genymobile.scrcpy
+      - Git.Git
+      - GitHub.GitLFS
+      - GnuPG.GnuPG
+      - GnuPG.Gpg4win
+      - Google.Chrome
+      - JanDeDobbeleer.OhMyPosh
+      - junegunn.fzf
+      - Microsoft.AzureDataStudio
+      - Microsoft.PowerShell
+      - Microsoft.PowerToys
+      - Microsoft.VisualStudioCode
+      - Microsoft.VisualStudio.2022.Community.Preview
+      - OpenVPNTechnologies.OpenVPNConnect
+      - sharkdp.bat

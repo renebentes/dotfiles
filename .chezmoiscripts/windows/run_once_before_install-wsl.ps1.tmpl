@@ -1,0 +1,14 @@
+{{ if eq .chezmoi.os "windows" -}}
+# ~/.local/share/chezmoi/run_once_before_install-packages.ps1
+# ============================================================================
+# Runs before `chezmoi apply` to install packages dependencies.
+#
+# You must change the PowerShell execution policy for correct
+# configure this.
+# Chezmoi will skip this script on other operating systems.
+# See https://www.chezmoi.io/docs/how-to/
+#
+
+wsl --install -d Ubuntu
+
+{{- end }}
