@@ -42,16 +42,28 @@ chezmoi init --apply renebentes
 
 ## Contributing
 
-Have a look through existing [Issues](http://github.com/renebentes/repository/issues) and [Pull Requests](http://github.com/renebentes/repository/pulls) that you could help with.
+Contributions are welcome!
 
-Your contributions are welcome. Feel free to send issues or pull requests.
+Have a look through existing [Issues][issues] and [Pull Requests][pulls] that you could help with.
+
+If you find any issues or have suggestions for improvements, please open an [_Issue_][issues] or submit a [_Pull Request (PR)_][pulls] to our [repository][repo].
+
+You can also check existing _Issues_ and _Pull Requests_ that you could help with.
+
+When contributing to this project, please follow the existing code style, use [conventional commits][commits], and submit your changes in a separate branch.
 
 ## Release Notes
 
-You can [see the release notes here](CHANGELOG.md)
+You can [see the release notes here][changelog]
 
 ## License
 
 Copyright (c) 2024 Rene Bentes Pinto
 
 This project licensed under **MIT** terms. See the [LICENSE](LICENSE) file for details.
+
+[repo]: http://github.com/renebentes/repository
+[issues]: ../../issues
+[pulls]: ../../pulls
+[changelog]: ../../commits
+[commits]: https://www.conventionalcommits.org/en/v1.0.0/
