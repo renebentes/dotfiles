@@ -1,50 +1,51 @@
-<type>(<scope>): <summary>, 50 chars ------------|
+<type>(<scope>): <summary>, 70 chars --------------------------------|
 
-<Describe the motivation behind this change, explain WHY you are making
-this change. Wrap all lines at 72 characters.>
+<Describe the motivation behind this change, explain WHY you are
+making this change. Wrap all lines at 100 characters.>
 
-<BREAKING CHANGE: <summary>, wrap at 72 chars>
+<BREAKING CHANGE: <summary>, wrap at 100 chars>
 
 <Describe the breaking change and migration instructions>
 
 <Fixes #issue-number>
-# ---------------------------- 72 chars -------------------------------|
+
+# ------------------------------------------ 100 chars --------------------------------------------|
 
 # Commit Messages Examples
 # ========================
 
-# --- Simple feature --------------------------------------------------|
+# ---- Simple feature -----------------------------------------------------------------------------|
 # feat: add email notifications on new direct messages
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
 
-# --- Simple feature with scope ---------------------------------------|
+# ---- Simple feature with scope ------------------------------------------------------------------|
 # feat(shopping cart): add the amazing button
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
 
-# --- Feature with breaking change ------------------------------------|
+# ---- Feature with breaking change ---------------------------------------------------------------|
 # feat!: allow provided config object to extend other configs
 #
 # BREAKING CHANGE: `extends` key in config file is now used for
 # extending other config files
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
 
-# --- Breaking Change with issue reference ----------------------------|
+# ---- Breaking Change with issue reference -------------------------------------------------------|
 # chore!: drop support for Node 6
 #
 # BREAKING CHANGE: use JavaScript features not available in Node 6.
 #
 # Fixes #123
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
 
-# --- Simple docs change ----------------------------------------------|
+# ---- Simple docs change -------------------------------------------------------------------------|
 # docs: correct spelling of CHANGELOG
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
 
-# --- Simple refactor -------------------------------------------------|
+# ---- Simple refactor ----------------------------------------------------------------------------|
 # refactor: implement fibonacci calculation as recursion
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
 
-# --- A bug fix with complete commit message --------------------------|
+# ---- A bug fix with complete commit message -----------------------------------------------------|
 # fix: prevent racing of requests
 #
 # Introduce a request id and a reference to latest request. Dismiss
@@ -54,7 +55,7 @@ this change. Wrap all lines at 72 characters.>
 # obsolete now.
 #
 # Fixes #325
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
 
 # Commit Guidelines
 # =================
@@ -71,14 +72,14 @@ this change. Wrap all lines at 72 characters.>
 # <footer>
 # ```
 #
-# The header is mandatory and must preferably contain 50 characters.
+# The header is mandatory and must preferably contain 70 characters.
 #
 # The body is optional but is a great way to explain the motivation for
 # the change.
 #
 # The footer is optional.
 #
-# Any line in commit body cannot be longer than 72 characters.
+# Any line in commit body cannot be longer than 100 characters.
 #
 # Commit Message Header
 # ---------------------
@@ -158,7 +159,7 @@ this change. Wrap all lines at 72 characters.>
 # <BLANK LINE>
 # Fixes #<issue number>
 # ```
-# 
+#
 # or
 #
 # ```
