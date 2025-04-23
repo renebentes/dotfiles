@@ -14,7 +14,7 @@ making this change. Wrap all lines at 100 characters.>
 # Commit Messages Examples
 # ========================
 
-# ---- Add feature -----------------------------------------------------------------------------|
+# ---- Add feature --------------------------------------------------------------------------------|
 # feat(api): add auth endpoint
 #
 # Add new `/login` endpoint to allow users to authenticate with email and password. Additionally, it
