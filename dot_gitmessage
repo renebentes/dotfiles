@@ -1,60 +1,65 @@
-<type>(<scope>): <summary>, 50 chars ------------|
+<type>(<scope>): <summary>, 70 chars --------------------------------|
 
-<Describe the motivation behind this change, explain WHY you are making
-this change. Wrap all lines at 72 characters.>
+<Describe the motivation behind this change, explain WHY you are
+making this change. Wrap all lines at 100 characters.>
 
-<BREAKING CHANGE: <summary>, wrap at 72 chars>
+<BREAKING CHANGE: <summary>, wrap at 100 chars>
 
 <Describe the breaking change and migration instructions>
 
 <Fixes #issue-number>
-# ---------------------------- 72 chars -------------------------------|
+
+# ------------------------------------------ 100 chars --------------------------------------------|
 
 # Commit Messages Examples
 # ========================
 
-# --- Simple feature --------------------------------------------------|
-# feat: add email notifications on new direct messages
-# ---------------------------------------------------------------------|
+# ---- Add feature -----------------------------------------------------------------------------|
+# feat(api): add auth endpoint
+#
+# Add new `/login` endpoint to allow users to authenticate with email and password. Additionally, it
+# provides credential validation and JWT token generation.
+# -------------------------------------------------------------------------------------------------|
 
-# --- Simple feature with scope ---------------------------------------|
-# feat(shopping cart): add the amazing button
-# ---------------------------------------------------------------------|
-
-# --- Feature with breaking change ------------------------------------|
+# ---- Feature with breaking change ---------------------------------------------------------------|
 # feat!: allow provided config object to extend other configs
 #
 # BREAKING CHANGE: `extends` key in config file is now used for
 # extending other config files
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
 
-# --- Breaking Change with issue reference ----------------------------|
-# chore!: drop support for Node 6
-#
-# BREAKING CHANGE: use JavaScript features not available in Node 6.
-#
-# Fixes #123
-# ---------------------------------------------------------------------|
-
-# --- Simple docs change ----------------------------------------------|
+# ---- Simple docs change -------------------------------------------------------------------------|
 # docs: correct spelling of CHANGELOG
-# ---------------------------------------------------------------------|
-
-# --- Simple refactor -------------------------------------------------|
-# refactor: implement fibonacci calculation as recursion
-# ---------------------------------------------------------------------|
-
-# --- A bug fix with complete commit message --------------------------|
-# fix: prevent racing of requests
 #
-# Introduce a request id and a reference to latest request. Dismiss
-# incoming responses other than from latest request.
+# Fixes #4321
+# -------------------------------------------------------------------------------------------------|
+
+# ---- Refactor -----------------------------------------------------------------------------------|
+# refactor(core)!: migrate to TypeScript
 #
-# Remove timeouts which were used to mitigate the racing issue but are
-# obsolete now.
+# BREAKING CHANGE: The project has been migrated from JavaScript to TypeScript
+#
+# Files now have the .ts extension, and the use of types is mandatory in all functions.
+#
+# Closes #4251
+# -------------------------------------------------------------------------------------------------|
+
+# ---- A bug fix ----------------------------------------------------------------------------------|
+# fix(ui): fix display error in modal
+#
+# Fixes issue where modal did not close when clicking outside of the display area, including check
+# for click events outside the modal.
 #
 # Fixes #325
-# ---------------------------------------------------------------------|
+# -------------------------------------------------------------------------------------------------|
+
+# ---- Revert -------------------------------------------------------------------------------------|
+# revert: feat(api): add auth endpoint
+#
+# This reverts commit 1234abc
+#
+# When we added the endpoint, the integration tests started to fail.
+# -------------------------------------------------------------------------------------------------|
 
 # Commit Guidelines
 # =================
@@ -71,14 +76,14 @@ this change. Wrap all lines at 72 characters.>
 # <footer>
 # ```
 #
-# The header is mandatory and must preferably contain 50 characters.
+# The header is mandatory and must preferably contain 70 characters.
 #
-# The body is optional but is a great way to explain the motivation for
-# the change.
+# The body is optional but is a great way to explain the motivation for the change.
 #
 # The footer is optional.
 #
-# Any line in commit body cannot be longer than 72 characters.
+# Any line in commit body or footer cannot be longer than 100 characters. Each paragraph in both
+# must be separated by a blank line.
 #
 # Commit Message Header
 # ---------------------
@@ -87,17 +92,15 @@ this change. Wrap all lines at 72 characters.>
 #
 # <type>(<scope><!>): <short summary>
 #   │       │    │        │
-#   │       │    │        └─ Summary in present tense, not capitalized
-#   │       │    │           and no period at the end
+#   │       │    │        └─ Summary in present tense, not capitalized and no period at the end
 #   │       │    │
 #   │       │    └─ Breaking changes signal is optional
 #   │       │
-#   │       └─ Scope is optional and is a noun that represents a section
-#   │          of the codebase like core, data, infra, app, web, mobile
+#   │       └─ Scope is optional and is a noun that represents a section of the codebase like core,
+#   │          data, infra, app, web, mobile
 #   │
-#   └─ Type reveals the intetion of the change in the codebase. Could it
-#      be: build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|
-#      wip
+#   └─ Type reveals the intention of the change in the codebase. Could it be:
+#      build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test|wip
 #
 # ##### Type
 #
@@ -118,35 +121,30 @@ this change. Wrap all lines at 72 characters.>
 #
 # ##### Scope
 #
-# The scope should be the name of a section of the codebase such as core,
-# domain, data, web, changelog, readme, infra, among others.
+# The scope should be the name of a section of the codebase such as core, domain, data, web,
+# changelog, readme, infra, among others.
 #
 # ##### Summary
 #
-# Use the summary to provide a succint description of the change:
+# Use the summary to provide a concise description of the change:
 #
-# * use the imperative, present tense: "change" not "changed" nor
-# "changes"
+# * use the imperative, like a command: "change" not "changed" nor "changes"
 # * don't capitalize the first letter
 # * no ending punctuation
 #
 # Commit Message Body
 # ---------------------
 #
-# Just as in the summary, use imperative, present tense: "fix" not "fixed"
-# nor "fixes".
-#
-# Explain the motivation for the change in the commit message body. This
-# commit message should explain WHY you are making the change. You can
-# include a comparison of the previous behavior with the new behavior in
-# order to illustrate the impact of the change.
+# Explain the motivation for the change in the commit message body. This commit message should
+# explain WHY you are making the change. You can include a comparison of the previous behavior with
+# the new behavior in order to illustrate the impact of the change.
 #
 # Commit Message Footer
 # ---------------------
 #
-# The footer can contain information about breaking changes and deprecations
-# and is also the place to reference GitHub issues, Azure DevOps workitems,
-# Jira tickets, and other PRs that this commit closes or is related to.
+# The footer can contain information about breaking changes and deprecations and is also the place
+# to reference GitHub issues, Azure DevOps work items, Jira tickets, and other PRs that this commit
+# closes or is related to.
 #
 # The main structure could be:
 #
@@ -158,7 +156,7 @@ this change. Wrap all lines at 72 characters.>
 # <BLANK LINE>
 # Fixes #<issue number>
 # ```
-# 
+#
 # or
 #
 # ```
@@ -170,26 +168,23 @@ this change. Wrap all lines at 72 characters.>
 # Closes #<pr number>
 # ```
 #
-# Breaking Change section should start with the phrase "BREAKING CHANGE: "
-# followed by a summary of the breaking change, a blank line, and a
-# detailed description of the breaking change that also includes migration
+# Breaking Change section should start with the phrase "BREAKING CHANGE: " followed by a summary of
+# the breaking change and a detailed description of the breaking change that also includes migration
 # instructions.
 #
-# Similarly, a Deprecation section should start with "DEPRECATED: "
-# followed by a short description of what is deprecated, a blank line,
-# and a detailed description of the deprecation that also mentions the
+# Similarly, a Deprecation section should start with "DEPRECATED: " followed by a short description
+# of what is deprecated and a detailed description of the deprecation that also mentions the
 # recommended update path.
 #
 # Revert commits
 # ---------------------
 #
-# If the commit reverts a previous commit, it should begin with
-# `revert: `, followed by the header of the reverted commit.
+# If the commit reverts a previous commit, it should begin with `revert: `, followed by the header
+# of the reverted commit.
 #
 # The content of the commit message body should contain:
 #
-# * information about the SHA of the commit being reverted in the format:
-# `This reverts commit <SHA>`,
+# * information about the SHA of the commit being reverted in the format: `This reverts commit <SHA>`,
 # * a clear description of the reason for reverting the commit message.
 #
 # See https://www.conventionalcommits.org/
