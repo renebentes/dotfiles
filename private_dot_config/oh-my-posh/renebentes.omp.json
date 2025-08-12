@@ -83,7 +83,7 @@
           "foreground": "p:white",
           "powerline_symbol": "\ue0b0",
           "style": "powerline",
-          "template": " {{ if .Error }}[PHP]{{ .Error }}{{ else }}\ue73d {{ .Full }}{{ end }} ",
+          "template": " \ue73d {{ .Full }} ",
           "type": "php"
         },
         {
