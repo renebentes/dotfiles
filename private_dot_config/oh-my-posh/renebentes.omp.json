@@ -62,6 +62,13 @@
     {
       "alignment": "right",
       "segments": [
+        {
+          "background": "#5c2d91",
+          "foreground": "p:white",
+          "powerline_symbol": "\ue0b0",
+          "style": "powerline",
+          "template": " \ue7b0 {{ .Context }}",
+          "type": "docker"
         },
         {
           "background": "#5c2d91",
