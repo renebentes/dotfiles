@@ -55,6 +55,13 @@
           },
           "style": "powerline",
           "type": "git"
+        }
+      ],
+      "type": "prompt"
+    },
+    {
+      "alignment": "right",
+      "segments": [
         },
         {
           "background": "#5c2d91",
