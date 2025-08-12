@@ -20,7 +20,14 @@
           "type": "os"
         },
         {
-          "background": "#61afef",
+          "background": "p:violet",
+          "foreground": "p:white",
+          "style": "diamond",
+          "template": " {{ .UserName }}@{{ .HostName }} ",
+          "trailing_diamond": "\ue0b0",
+          "type": "session"
+        },
+        {
           "foreground": "p:white",
           "powerline_symbol": "\ue0b0",
           "properties": {
