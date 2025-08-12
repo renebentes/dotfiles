@@ -90,14 +90,16 @@
           "background": "#6ca35e",
           "foreground": "p:white",
           "powerline_symbol": "\ue0b0",
-          "properties": {
-            "fetch_package_manager": true,
-            "npm_icon": "<#cc3a3a>\ue71e</>",
-            "yarn_icon": "<#348cba>\uf61a</>"
-          },
           "style": "powerline",
           "template": " \uf898 {{ if .PackageManagerIcon }}{{ .PackageManagerIcon }} {{ end }}{{ .Full }} ",
           "type": "node"
+        },
+        {
+          "background": "#cc3a3a",
+          "foreground": "p:white",
+          "powerline_symbol": "\ue0b0",
+          "style": "powerline",
+          "type": "npm"
         },
         {
           "background": "#c3002f",
