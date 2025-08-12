@@ -8,6 +8,14 @@
           "background": "p:violet",
           "foreground": "p:white",
           "leading_diamond": "\ue0b6",
+          "properties": {
+            "debian": "\uf306",
+            "linux": "\ue712",
+            "macos": "\ue711",
+            "raspbian": "\uf315",
+            "ubuntu": "\uf31c",
+            "windows": "\ue70f"
+          },
           "style": "diamond",
           "type": "os"
         },
