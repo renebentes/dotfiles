@@ -28,6 +28,7 @@
           "type": "session"
         },
         {
+          "background": "p:light_blue",
           "foreground": "p:white",
           "powerline_symbol": "\ue0b0",
           "properties": {
