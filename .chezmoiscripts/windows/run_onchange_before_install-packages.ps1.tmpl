@@ -1,10 +1,12 @@
 {{ if eq .chezmoi.os "windows" -}}
 # ~/.local/share/chezmoi/run_onchange_before_install-packages.ps1
 # ============================================================================
-# Runs before `chezmoi apply` to install packages dependencies.
+# Runs before `chezmoi apply` when content was changed to install packages
+# dependencies.
 #
 # Chezmoi will skip this script on other operating systems.
 #
+# See https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
 
 {{ range .packages.windows.winget -}}
 winget install --accept-package-agreements --uninstall-previous {{ . | quote }}
