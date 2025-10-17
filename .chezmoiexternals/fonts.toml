@@ -1,0 +1,9 @@
+[".local/share/fonts/CascadiaCode"]
+    type = "archive"
+    url = {{ gitHubLatestReleaseAssetURL "microsoft/cascadia-code" "CascadiaCode-*.zip" | quote }}
+    exact = true
+    stripComponents = 1
+    exclude = ["**/static", "**/*.otf", "**/*.woff2"]
+    refreshPeriod = "168h"
+
+
