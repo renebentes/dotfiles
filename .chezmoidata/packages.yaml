@@ -1,6 +1,7 @@
 packages:
   windows:
     powershell:
+      - Fonts
       - Posh-Git
       - PsReadline
       - PsFzf
