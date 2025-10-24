@@ -17,10 +17,9 @@ packages:
       - Google.Chrome
       - JanDeDobbeleer.OhMyPosh
       - junegunn.fzf
-      - Microsoft.AzureDataStudio
       - Microsoft.PowerShell
       - Microsoft.PowerToys
       - Microsoft.VisualStudioCode
-      - Microsoft.VisualStudio.2022.Community.Preview
+      - Microsoft.VisualStudio.Community.Insiders
       - OpenVPNTechnologies.OpenVPNConnect
       - sharkdp.bat
