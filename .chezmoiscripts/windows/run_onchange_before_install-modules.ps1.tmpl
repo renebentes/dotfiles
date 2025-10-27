@@ -10,8 +10,7 @@
 
 Write-Output "Installing PowerShell Modules"
 
-$module = @("{{- .packages.windows.powershell | uniq | sortAlpha | join "\", \"" -}}")
-
+$modules = @("{{- .packages.windows.powershell | uniq | sortAlpha | join "\", \"" -}}")
 foreach($module in $modules)
 {
     if (-not (Get-Module -ListAvailable -Name $module -ErrorAction SilentlyContinue))
