@@ -1,3 +1,4 @@
+{{ if eq .chezmoi.os "windows" -}}
 # ~/.local/share/chezmoi/run_onchange_after_install-fonts.ps1
 # ============================================================================
 # Runs after `chezmoi apply` when content was changed to install fonts on
@@ -7,7 +8,7 @@
 #
 # See https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
 
-{{ if eq .chezmoi.os "windows" -}}
 Import-Module Fonts
 Get-ChildItem -Path "$env:USERPROFILE\.local\fonts\" -Filter *.ttf | Install-Font
+
 {{- end }}
