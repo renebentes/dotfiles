@@ -11,7 +11,7 @@
 Write-Output "Installing Winget Packages"
 
 {{ range .packages.windows.winget -}}
-winget install --accept-package-agreements {{ . | quote }}
+winget install --accept-package-agreements --accept-source-agreements {{ . | quote }}
 {{ end -}}
 
 {{- end }}
