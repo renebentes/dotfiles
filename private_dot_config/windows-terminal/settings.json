@@ -39,7 +39,7 @@
     "defaults": {
       "colorScheme": "One Half Dark",
       "font": {
-        "face": "Cascadia Code NF"
+        "face": "Cascadia Code NF, Cascadia Code"
       }
     },
     "list": [

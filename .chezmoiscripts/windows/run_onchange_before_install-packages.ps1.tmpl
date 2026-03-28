@@ -8,8 +8,10 @@
 #
 # See https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
 
+Write-Output "Installing Winget Packages"
+
 {{ range .packages.windows.winget -}}
-winget install --accept-package-agreements --uninstall-previous {{ . | quote }}
+winget install --accept-package-agreements --accept-source-agreements {{ . | quote }}
 {{ end -}}
 
 {{- end }}
