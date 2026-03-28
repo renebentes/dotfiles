@@ -9,6 +9,6 @@
 # See https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
 
 Import-Module Fonts
-Get-ChildItem -Path "$env:USERPROFILE\.local\fonts\" -Filter *.ttf | Install-Font
+Get-ChildItem -Path "$env:USERPROFILE\.local\share\fonts\" -Recurse -Filter *.ttf | ForEach-Object { Install-Font $_ }
 
 {{- end }}
