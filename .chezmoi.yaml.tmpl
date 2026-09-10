@@ -13,11 +13,11 @@
 
 {{ if eq .chezmoi.os "windows" -}}
 cd:
-    command: "pwsh"
-    args: ["-NoLogo", "-NoExit", "-Command", "& {Set-Location $env:HOMEPATH/.local/share/chezmoi}"]
+  command: "pwsh"
+  args: ["-NoLogo", "-NoExit", "-Command", "& {Set-Location $env:HOMEPATH/.local/share/chezmoi}"]
 {{ end -}}
 
 data:
-    email: {{ $email | quote }}
-    name: {{ $name | quote }}
-    key: {{ $key | quote }}
+  email: {{ $email | quote }}
+  name: {{ $name | quote }}
+  key: {{ $key | quote }}
