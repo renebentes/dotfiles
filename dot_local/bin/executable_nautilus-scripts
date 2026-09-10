@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Wrapper to manage nautilus-scripts, a set of file manager actions
+# that enhance your workflow. Useful right-click # options to simplify
+# common tasks across GNOME, KDE, Xfce, and more. To further details,
+# go to https://github.com/cfgnunes/nautilus-scripts
+
+set -euo pipefail
+
+NAUTILUS_SCRIPTS_DIR=$HOME/.local/share/nautilus-scripts
+
+function _usage() {
+    cat <<<"
+Enhanced File Manager Actions for Linux
+Usage:
+    nautilus-scripts [ -i | --install ] [ -u | --uninstall ] [ -h | --help ]
+
+nautilus-scripts is a set of file manager actions that enhance your workflow. Useful right-click
+options to simplify common tasks across GNOME, KDE, Xfce, and more. To further details, go to https://github.com/cfgnunes/nautilus-scripts.
+
+Options:
+    -i,--install        Performs the installation of the useful collection
+    -u,--uninstall      Removes the collection from your machine
+    -h,--help           Shows this help message
+"
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -i | --install)
+        bash "$NAUTILUS_SCRIPTS_DIR/install.sh"
+        shift
+        ;;
+    -u | --uninstall)
+        bash "$NAUTILUS_SCRIPTS_DIR/uninstall.sh"
+        shift
+        ;;
+    -h | --help)
+        _usage
+        exit 0
+        ;;
+    -*)
+        printf 'Unknown option: %s\n' "$1" >&2
+        exit 2
+        ;;
+    *) break ;;
+    esac
+done

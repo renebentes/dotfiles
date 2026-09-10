@@ -1,0 +1,17 @@
+# prettier-ignore
+{{ if eq .chezmoi.os "linux" -}}
+
+.local/share/nautilus-scripts:
+  type: archive
+  url: https://github.com/cfgnunes/nautilus-scripts/archive/main.tar.gz
+  exact: true
+  stripComponents: 1
+  refreshPeriod: 168h
+  include:
+    - "*/install.sh"
+    - "*/uninstall.sh"
+    - "*/.helpers"
+    - "*/**/.multiselect-menu.sh"
+
+# prettier-ignore
+{{- end }}
