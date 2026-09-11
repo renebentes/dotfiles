@@ -1,0 +1,11 @@
+.local/share/fonts/CascadiaCode:
+  type: archive
+  # prettier-ignore
+  url: {{ gitHubLatestReleaseAssetURL "microsoft/cascadia-code" "CascadiaCode-*.zip" }}
+  exact: true
+  stripComponents: 1
+  exclude:
+    - "**/static"
+    - "**/*.otf"
+    - "**/*.woff2"
+  refreshPeriod: "168h"
