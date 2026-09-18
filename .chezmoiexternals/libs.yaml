@@ -13,5 +13,11 @@
     - "*/.helpers"
     - "*/**/.multiselect-menu.sh"
 
+.local/bin/dotnet-install:
+  type: file
+  url: https://dot.net/v1/dotnet-install.sh
+  executable: true
+  path: dotnet-install
+
 # prettier-ignore
 {{- end }}
