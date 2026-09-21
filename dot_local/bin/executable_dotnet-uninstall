@@ -1,0 +1,393 @@
+#!/usr/bin/env bash
+# Simple command line interface for uninstalling .NET SDK from a specified location.
+
+set -euo pipefail
+
+INSTALL_DIR="<auto>"
+VERBOSE=false
+DRY_RUN=false
+INVENTORY_FILE=""
+SELECTED_COMPONENTS=()
+REMOVAL_PLAN_FILE=""
+
+# Import helper script for interactive multi-selection menus from https://github.com/cfgnunes/nautilus-scripts
+# shellcheck source=/dev/null
+if [[ -f "$HOME/.local/share/nautilus-scripts/.helpers/.multiselect-menu.sh" ]]; then
+    source "$HOME/.local/share/nautilus-scripts/.helpers/.multiselect-menu.sh"
+fi
+
+# Use in the the functions: eval $invocation
+# shellcheck disable=SC2016
+invocation='say_verbose "Calling: ${yellow:-}${FUNCNAME[0]} ${green:-}$*${normal:-}"'
+
+# standard output may be used as a return value in the functions
+# we need a way to write text on the screen in the functions so that
+# it won't interfere with the return value.
+# Exposing stream 3 as a pipe to standard output of the script itself
+exec 3>&1
+
+# Setup some colors to use. These need to work in fairly limited shells, like the Ubuntu Docker container where there are only 8 colors.
+# See if stdout is a terminal
+if [ -t 1 ] && command -v tput >/dev/null; then
+    # see if it supports colors
+    ncolors=$(tput colors || echo 0)
+    if [ -n "$ncolors" ] && [ "$ncolors" -ge 8 ]; then
+        bold="$(tput bold || echo)"
+        normal="$(tput sgr0 || echo)"
+        black="$(tput setaf 0 || echo)"
+        red="$(tput setaf 1 || echo)"
+        green="$(tput setaf 2 || echo)"
+        yellow="$(tput setaf 3 || echo)"
+        blue="$(tput setaf 4 || echo)"
+        magenta="$(tput setaf 5 || echo)"
+        cyan="$(tput setaf 6 || echo)"
+        white="$(tput setaf 7 || echo)"
+    fi
+fi
+
+say_warning() {
+    printf "%b\n" "${yellow:-}dotnet_uninstall: Warning: $1${normal:-}" >&3
+}
+
+say_err() {
+    printf "%b\n" "${red:-}dotnet_uninstall: Error: $1${normal:-}" >&2
+}
+
+say() {
+    # using stream 3 (defined in the beginning) to not interfere with stdout of functions
+    # which may be used as return value
+    printf "%b\n" "${cyan:-}dotnet-uninstall:${normal:-} $1" >&3
+}
+
+say_verbose() {
+    if [ "${VERBOSE}" = true ]; then
+        say "$1"
+    fi
+}
+
+get_user_install_path() {
+    eval "$invocation"
+
+    if [[ -n "${DOTNET_INSTALL_DIR:-}" ]]; then
+        echo "$DOTNET_INSTALL_DIR"
+    else
+        echo "$HOME/.dotnet"
+    fi
+    return 0
+}
+
+resolve_installation_path() {
+    eval "$invocation"
+
+    local install_dir=$1
+    if [[ "$install_dir" = "<auto>" ]]; then
+        local user_install_path
+        user_install_path="$(get_user_install_path)"
+        say_verbose "resolve_installation_path: user_install_path=$user_install_path"
+        echo "$user_install_path"
+        return 0
+    fi
+
+    echo "$install_dir"
+    return 0
+}
+
+usage() {
+    cat <<<".NET Uninstaller
+Usage: dotnet-uninstall [ -i|--install-dir ][ -n|--dry-run ][ -h|--help ]
+
+dotnet-uninstall is a simple command line interface for uninstalling the .NET SDK from a specified location.
+    Note that the use of this script is only for manual installation scenarios.
+    Please, prefer using installers in development environment.
+
+Options:
+  -i, --install-dir <DIR>    The location to uninstall from (see Install Location below)
+  -n, --dry-run              Do not perform uninstallation. Display file list.
+  -v, --verbose              Verbose output
+  -h, --help                 Shows this help message
+
+Install Location:
+  Location is chosen in following order:
+    - --install-dir option
+    - Environmental variable DOTNET_INSTALL_DIR
+    - $HOME/.dotnet
+"
+}
+
+create_inventory() {
+    eval "$invocation"
+
+    INVENTORY_FILE="$(mktemp)"
+    trap 'rm -f "$INVENTORY_FILE"' EXIT
+
+    say_verbose "create_inventory: INVENTORY_FILE=$INVENTORY_FILE"
+
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+        "type" "name" "version" "path" "metadata" \
+        >"$INVENTORY_FILE"
+}
+
+inventory_add() {
+    eval "$invocation"
+
+    local type=$1
+    local name=$2
+    local version=$3
+    local path=$4
+    local metadata=${5:-}
+
+    say_verbose "inventory_add: type=$type, name=$name, version=$version, path=$path, metadata=$metadata"
+
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+        "$type" "$name" "$version" "$path" "$metadata" \
+        >>"$INVENTORY_FILE"
+}
+
+inventory_sdks() {
+    eval "$invocation"
+
+    local sdk_dir="${INSTALL_DIR}/sdk"
+
+    [[ -d "$sdk_dir" ]] || return 0
+
+    local path version
+
+    while IFS= read -r version; do
+        path="${sdk_dir}/${version}"
+
+        [[ -d "$path" ]] || continue
+
+        inventory_add "sdk" "Microsoft.NET.Sdk" "$version" "$path"
+
+        say_verbose "inventory_sdks: version=$version, path=$path"
+    done < <(
+        find "$sdk_dir" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -printf '%f\n' |
+            sort -V
+    )
+}
+
+inventory_runtimes() {
+    eval "$invocation"
+
+    local shared_dir="${INSTALL_DIR}/shared"
+
+    [[ -d "$shared_dir" ]] || return 0
+
+    local framework_dir framework path version
+
+    while IFS= read -r -d '' framework_dir; do
+        [[ -d "$framework_dir" ]] || continue
+
+        framework="${framework_dir##*/}"
+
+        while IFS= read -r -d '' path; do
+            version="${path##*/}"
+
+            inventory_add "runtime" "$framework" "$version" "$path"
+            say_verbose "inventory_runtimes: framework=$framework, version=$version, path=$path"
+        done < <(
+            find "$framework_dir" \
+                -mindepth 1 \
+                -maxdepth 1 \
+                -type d \
+                -print0 |
+                sort -zV
+        )
+    done < <(
+        find "$shared_dir" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -print0 |
+            sort -z
+    )
+}
+
+inventory_hostfxr() {
+    eval "$invocation"
+
+    local fxr_dir="${INSTALL_DIR}/host/fxr"
+
+    [[ -d "$fxr_dir" ]] || return 0
+
+    local path version
+
+    while IFS= read -r -d '' path; do
+        version="${path##*/}"
+
+        [[ -d "$path" ]] || continue
+
+        inventory_add "hostfxr" "" "$version" "$path"
+        say_verbose "inventory_hostfxr: version=$version, path=$path"
+    done < <(
+        find "$fxr_dir" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -print0 |
+            sort -zV
+    )
+}
+
+inventory_manifests() {
+    eval "$invocation"
+
+    local manifests_dir="${INSTALL_DIR}/sdk-manifests"
+
+    [[ -d "$manifests_dir" ]] || return 0
+
+    local feature_band path
+
+    while IFS= read -r -d '' path; do
+        feature_band="${path##*/}"
+
+        [[ -d "$path" ]] || continue
+
+        inventory_add "manifest" "sdk-manifest" "$feature_band" "$path" "feature-band=$feature_band"
+        say_verbose "inventory_manifests: feature_band=$feature_band, path=$path"
+    done < <(
+        find "$manifests_dir" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -print0 |
+            sort -zV
+    )
+}
+
+inventory_packs() {
+    local packs_dir="${INSTALL_DIR}/packs"
+
+    [[ -d "$packs_dir" ]] || return 0
+
+    local pack_dir version path name
+
+    while IFS= read -r -d '' pack_dir; do
+        name="${pack_dir##*/}"
+
+        while IFS= read -r -d '' path; do
+            version="${path##*/}"
+
+            inventory_add "pack" "$name" "$version" "$path"
+            say_verbose "inventory_packs: name=$name, version=$version, path=$path"
+        done < <(
+            find "$pack_dir" \
+                -mindepth 1 \
+                -maxdepth 1 \
+                -type d \
+                -print0 |
+                sort -zV
+        )
+    done < <(
+        find "$packs_dir" \
+            -mindepth 1 \
+            -maxdepth 1 \
+            -type d \
+            -print0 |
+            sort -z
+    )
+}
+
+inventory() {
+    eval "$invocation"
+
+    say_verbose "Inventorying .NET installation: '$INSTALL_DIR'"
+
+    create_inventory
+
+    inventory_sdks
+    inventory_runtimes
+    inventory_hostfxr
+    inventory_manifests
+    inventory_packs
+}
+
+display_inventory() {
+    eval "$invocation"
+
+    say "Installed .NET components:"
+
+    printf '\n'
+
+    awk -F '\t' '
+        NR == 1 {
+            next
+        }
+
+        $1 == "sdk" {
+            printf "SDK     %-25s %s\n", $3, $4
+        }
+
+        $1 == "runtime" {
+            printf "Runtime %-25s %-12s %s\n", $2, $3, $4
+        }
+
+        $1 == "hostfxr" {
+            printf "HostFxr %-25s %s\n", $3, $4
+        }
+
+        $1 == "manifest" {
+            printf "Manifest %-25s %s\n", $3, $4
+        }
+
+        $1 == "pack" {
+            printf "Pack     %-25s %-12s %s\n", $2, $3, $4
+        }
+    ' "$INVENTORY_FILE"
+
+    printf '\n'
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -i | --install-dir)
+        if [[ $# -lt 2 ]]; then
+            say_err "'$1' option must require an argument."
+            exit 1
+        fi
+        shift
+        INSTALL_DIR="$1"
+        ;;
+    -h | --help)
+        usage
+        exit 0
+        ;;
+    -n | --dry-run)
+        DRY_RUN=true
+        ;;
+    -v | --verbose)
+        VERBOSE=true
+        ;;
+    *)
+        say_err "Unknown argument \`$1\`"
+        exit 1
+        ;;
+    esac
+    shift
+done
+
+say_verbose "Note that this script is intended only for manual .NET installation scenarios."
+say_verbose "Please, prefer using installers in development environment."
+
+INSTALL_DIR="$(resolve_installation_path "$INSTALL_DIR")"
+say_verbose ".NET installation root: '$INSTALL_DIR'"
+
+if [[ ! -d "$INSTALL_DIR" ]]; then
+    say_warning "Installation directory does not exist: '$INSTALL_DIR'"
+    exit 0
+fi
+
+inventory
+
+if [[ "${DRY_RUN}" = true ]]; then
+    display_inventory
+
+    say "Dry-run completed. No changes were made."
+    exit 0
+fi
+
+say "Uninstallation finished successfully"
