@@ -10,11 +10,6 @@ INVENTORY_FILE=""
 SELECTED_COMPONENTS=()
 REMOVAL_PLAN_FILE=""
 
-# Import helper script for interactive multi-selection menus from https://github.com/cfgnunes/nautilus-scripts
-# shellcheck source=/dev/null
-if [[ -f "$HOME/.local/share/nautilus-scripts/.helpers/.multiselect-menu.sh" ]]; then
-    source "$HOME/.local/share/nautilus-scripts/.helpers/.multiselect-menu.sh"
-fi
 
 # Use in the the functions: eval $invocation
 # shellcheck disable=SC2016
