@@ -150,150 +150,19 @@ inventory_add() {
 inventory_sdks() {
     eval "$invocation"
 
-    local sdk_dir="${INSTALL_DIR}/sdk"
+    local line path version
 
-    [[ -d "$sdk_dir" ]] || return 0
+    while IFS= read -r line; do
+        version="${line%% \[*}"
+        path="${line##* \[}"
+        path="${path%]}"
 
-    local path version
+        say_verbose "inventory_sdks: version=$version, path=$path/$version"
 
-    while IFS= read -r version; do
-        path="${sdk_dir}/${version}"
+        [[ -d "$path/$version" ]] || continue
 
-        [[ -d "$path" ]] || continue
-
-        inventory_add "sdk" "Microsoft.NET.Sdk" "$version" "$path"
-
-        say_verbose "inventory_sdks: version=$version, path=$path"
-    done < <(
-        find "$sdk_dir" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -printf '%f\n' |
-            sort -V
-    )
-}
-
-inventory_runtimes() {
-    eval "$invocation"
-
-    local shared_dir="${INSTALL_DIR}/shared"
-
-    [[ -d "$shared_dir" ]] || return 0
-
-    local framework_dir framework path version
-
-    while IFS= read -r -d '' framework_dir; do
-        [[ -d "$framework_dir" ]] || continue
-
-        framework="${framework_dir##*/}"
-
-        while IFS= read -r -d '' path; do
-            version="${path##*/}"
-
-            inventory_add "runtime" "$framework" "$version" "$path"
-            say_verbose "inventory_runtimes: framework=$framework, version=$version, path=$path"
-        done < <(
-            find "$framework_dir" \
-                -mindepth 1 \
-                -maxdepth 1 \
-                -type d \
-                -print0 |
-                sort -zV
-        )
-    done < <(
-        find "$shared_dir" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -print0 |
-            sort -z
-    )
-}
-
-inventory_hostfxr() {
-    eval "$invocation"
-
-    local fxr_dir="${INSTALL_DIR}/host/fxr"
-
-    [[ -d "$fxr_dir" ]] || return 0
-
-    local path version
-
-    while IFS= read -r -d '' path; do
-        version="${path##*/}"
-
-        [[ -d "$path" ]] || continue
-
-        inventory_add "hostfxr" "" "$version" "$path"
-        say_verbose "inventory_hostfxr: version=$version, path=$path"
-    done < <(
-        find "$fxr_dir" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -print0 |
-            sort -zV
-    )
-}
-
-inventory_manifests() {
-    eval "$invocation"
-
-    local manifests_dir="${INSTALL_DIR}/sdk-manifests"
-
-    [[ -d "$manifests_dir" ]] || return 0
-
-    local feature_band path
-
-    while IFS= read -r -d '' path; do
-        feature_band="${path##*/}"
-
-        [[ -d "$path" ]] || continue
-
-        inventory_add "manifest" "sdk-manifest" "$feature_band" "$path" "feature-band=$feature_band"
-        say_verbose "inventory_manifests: feature_band=$feature_band, path=$path"
-    done < <(
-        find "$manifests_dir" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -print0 |
-            sort -zV
-    )
-}
-
-inventory_packs() {
-    local packs_dir="${INSTALL_DIR}/packs"
-
-    [[ -d "$packs_dir" ]] || return 0
-
-    local pack_dir version path name
-
-    while IFS= read -r -d '' pack_dir; do
-        name="${pack_dir##*/}"
-
-        while IFS= read -r -d '' path; do
-            version="${path##*/}"
-
-            inventory_add "pack" "$name" "$version" "$path"
-            say_verbose "inventory_packs: name=$name, version=$version, path=$path"
-        done < <(
-            find "$pack_dir" \
-                -mindepth 1 \
-                -maxdepth 1 \
-                -type d \
-                -print0 |
-                sort -zV
-        )
-    done < <(
-        find "$packs_dir" \
-            -mindepth 1 \
-            -maxdepth 1 \
-            -type d \
-            -print0 |
-            sort -z
-    )
+        inventory_add "sdk" "Microsoft.NET.Sdk" "$version" "$path/$version"
+    done < <("$INSTALL_DIR/dotnet" --list-sdks 2>/dev/null)
 }
 
 inventory() {
@@ -302,12 +171,7 @@ inventory() {
     say_verbose "Inventorying .NET installation: '$INSTALL_DIR'"
 
     create_inventory
-
     inventory_sdks
-    inventory_runtimes
-    inventory_hostfxr
-    inventory_manifests
-    inventory_packs
 }
 
 display_inventory() {
@@ -352,19 +216,15 @@ run_component_selector() {
     local fzf_options=(
         --ansi
         --border
-        --header "Use TAB to select multiple components and ENTER to confirm."
+        --header "Use TAB to select multiple SDKs and ENTER to confirm."
         --height=80%
         --multi
-        --prompt="Select components to remove: "
+        --prompt="Select SDKs to remove: "
         --layout=reverse
         --with-nth="1,2,3"
     )
 
-    awk -F '\t' '
-        NR > 1 && ($1 == "sdk" || $1 == "runtime") {
-            print
-        }
-    ' "$INVENTORY_FILE" | fzf "${fzf_options[@]}"
+    tail -n +2 "$INVENTORY_FILE" | fzf "${fzf_options[@]}"
 }
 
 select_components() {
