@@ -114,6 +114,15 @@ Install Location:
 "
 }
 
+check_dependencies() {
+    eval "$invocation"
+
+    if ! command -v fzf >/dev/null 2>&1; then
+        say_err "fzf is required but was not found."
+        exit 1
+    fi
+}
+
 create_inventory() {
     eval "$invocation"
 
@@ -342,6 +351,54 @@ display_inventory() {
     printf '\n'
 }
 
+select_components() {
+    eval "$invocation"
+
+    local selected_lines
+    local type
+    local name
+    local version
+    local path
+    local metadata
+
+    if ! selected_lines="$(
+        awk -F '\t' '
+        NR == 1 {
+            next
+        }
+
+        $1 == "sdk" {
+            printf "%s\t%s\t%s\t%s\n", $1, $2, $3, $4
+        }
+
+        $1 == "runtime" {
+            printf "%s\t%s\t%s\t%s\n", $1, $2, $3, $4
+        }
+    ' "$INVENTORY_FILE" |
+            fzf \
+                --multi \
+                --height=80% \
+                --border \
+                --header='TAB: select/unselect | ENTER: confirm | ESC: cancel' \
+                --layout=reverse \
+                --delimiter=$'\t'
+    )"; then
+        exit 130
+    fi
+
+    say "Select components to remove:"
+    say_verbose "Use TAB to select multiple components and ENTER to confirm."
+
+    SELECTED_COMPONENTS=()
+
+    while IFS=$'\t' read -r type name version path; do
+        [[ -n "$path" ]] || continue
+        SELECTED_COMPONENTS+=("$path")
+    done <<<"$selected_lines"
+
+    say_verbose "Selected components: ${#SELECTED_COMPONENTS[@]}"
+}
+
 while [[ $# -gt 0 ]]; do
     case "$1" in
     -i | --install-dir)
@@ -373,6 +430,8 @@ done
 say_verbose "Note that this script is intended only for manual .NET installation scenarios."
 say_verbose "Please, prefer using installers in development environment."
 
+check_dependencies
+
 INSTALL_DIR="$(resolve_installation_path "$INSTALL_DIR")"
 say_verbose ".NET installation root: '$INSTALL_DIR'"
 
@@ -382,6 +441,7 @@ if [[ ! -d "$INSTALL_DIR" ]]; then
 fi
 
 inventory
+select_components
 
 if [[ "${DRY_RUN}" = true ]]; then
     display_inventory
