@@ -150,6 +150,13 @@ inventory_add() {
 inventory_sdks() {
     eval "$invocation"
 
+    local dotnet="${INSTALL_DIR}/dotnet"
+
+    if [[ ! -x "$dotnet" ]]; then
+        say_err ".NET cli not found at: '$dotnet'"
+        return 1
+    fi
+
     local line path version
 
     while IFS= read -r line; do
@@ -162,7 +169,7 @@ inventory_sdks() {
         [[ -d "$path/$version" ]] || continue
 
         inventory_add "sdk" "Microsoft.NET.Sdk" "$version" "$path/$version"
-    done < <("$INSTALL_DIR/dotnet" --list-sdks 2>/dev/null)
+    done < <("$dotnet" --list-sdks 2>/dev/null)
 }
 
 inventory() {
