@@ -174,42 +174,6 @@ inventory() {
     inventory_sdks
 }
 
-display_inventory() {
-    eval "$invocation"
-
-    say "Installed .NET components:"
-
-    printf '\n'
-
-    awk -F '\t' '
-        NR == 1 {
-            next
-        }
-
-        $1 == "sdk" {
-            printf "SDK     %-25s %s\n", $3, $4
-        }
-
-        $1 == "runtime" {
-            printf "Runtime %-25s %-12s %s\n", $2, $3, $4
-        }
-
-        $1 == "hostfxr" {
-            printf "HostFxr %-25s %s\n", $3, $4
-        }
-
-        $1 == "manifest" {
-            printf "Manifest %-25s %s\n", $3, $4
-        }
-
-        $1 == "pack" {
-            printf "Pack     %-25s %-12s %s\n", $2, $3, $4
-        }
-    ' "$INVENTORY_FILE"
-
-    printf '\n'
-}
-
 run_component_selector() {
     eval "$invocation"
 
@@ -307,8 +271,10 @@ if ! select_components; then
     exit 0
 fi
 
+REMOVAL_PLAN="$(build_removal_plan)"
+say_verbose "Removal plan:\n$REMOVAL_PLAN"
+
 if [[ "${DRY_RUN}" = true ]]; then
-    display_inventory
 
     say "Dry-run completed. No changes were made."
     exit 0
