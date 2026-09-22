@@ -351,43 +351,48 @@ display_inventory() {
     printf '\n'
 }
 
+run_component_selector() {
+    eval "$invocation"
+
+    local fzf_options=(
+        --ansi
+        --border
+        --header "Use TAB to select multiple components and ENTER to confirm."
+        --height=80%
+        --multi
+        --prompt="Select components to remove: "
+        --layout=reverse
+        --with-nth="1,2,3"
+    )
+
+    awk -F '\t' '
+        NR > 1 && ($1 == "sdk" || $1 == "runtime") {
+            print
+        }
+    ' "$INVENTORY_FILE" | fzf "${fzf_options[@]}"
+}
+
 select_components() {
     eval "$invocation"
 
-    local selected_lines
-    local type
-    local name
-    local version
-    local path
-    local metadata
+    local selected_lines type name version path metadata
 
-    if ! selected_lines="$(
-        awk -F '\t' '
-        NR == 1 {
-            next
-        }
+    if selected_lines="$(run_component_selector)"; then
+        :
+    else
+        fzf_status=$?
 
-        $1 == "sdk" {
-            printf "%s\t%s\t%s\t%s\n", $1, $2, $3, $4
-        }
-
-        $1 == "runtime" {
-            printf "%s\t%s\t%s\t%s\n", $1, $2, $3, $4
-        }
-    ' "$INVENTORY_FILE" |
-            fzf \
-                --multi \
-                --height=80% \
-                --border \
-                --header='TAB: select/unselect | ENTER: confirm | ESC: cancel' \
-                --layout=reverse \
-                --delimiter=$'\t'
-    )"; then
-        exit 130
+        case "$fzf_status" in
+        130)
+            say "Component selection cancelled."
+            return 1
+            ;;
+        *)
+            say_err "fzf failed with exit code $fzf_status."
+            return 1
+            ;;
+        esac
     fi
-
-    say "Select components to remove:"
-    say_verbose "Use TAB to select multiple components and ENTER to confirm."
 
     SELECTED_COMPONENTS=()
 
@@ -441,7 +446,11 @@ if [[ ! -d "$INSTALL_DIR" ]]; then
 fi
 
 inventory
-select_components
+
+if ! select_components; then
+    say "No components selected for removal. Exiting."
+    exit 0
+fi
 
 if [[ "${DRY_RUN}" = true ]]; then
     display_inventory
