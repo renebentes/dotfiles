@@ -1,0 +1,4 @@
+# Load .NET CLI Completions
+{{ if lookPath "dotnet" -}}
+{{ output "dotnet" "completions" "script" "bash" -}}
+{{- end -}}
