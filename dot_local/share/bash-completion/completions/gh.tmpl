@@ -1,0 +1,4 @@
+# Load GitHub CLI Completions
+{{- if lookPath "gh" -}}
+{{ output "gh" "completion" "--shell" "bash" -}}
+{{- end -}}
