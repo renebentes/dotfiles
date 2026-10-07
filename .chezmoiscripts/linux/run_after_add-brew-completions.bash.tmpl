@@ -1,0 +1,37 @@
+{{ if (and (eq .chezmoi.os "linux") ( lookPath "brew")) -}}
+#!/usr/bin/env bash
+# ~/.local/share/chezmoi/run_after_add-brew-completions.bash
+# ============================================================================
+# Runs after `chezmoi apply` to add completions for HomeBrew packages on
+# Linux.
+#
+# Chezmoi will skip this script on other operating systems.
+#
+# See https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
+
+BREW_COMPLETIONS_DIR="$HOMEBREW_PREFIX/etc/bash_completion.d"
+USER_COMPLETIONS_DIR="$HOME/.local/share/bash-completion/completions"
+
+if [ -d "$BREW_COMPLETIONS_DIR" ]; then
+    mkdir -p "$USER_COMPLETIONS_DIR"
+
+    mapfile -t BROKEN_LINKS < <(find "$USER_COMPLETIONS_DIR" -xtype l)
+    for link in "${BROKEN_LINKS[@]}"; do
+        echo "Removing dead Homebrew completion link: $(basename "$link")"
+        rm "$link"
+    done
+
+    for file in "$BREW_COMPLETIONS_DIR"/*; do
+        [ -e "$file" ] || continue
+        filename=$(basename "$file")
+        filename="${filename%-completion.bash}"
+        filename="${filename%.bash}"
+        filename="${filename%.sh}"
+
+        ln -sf "$file" "$USER_COMPLETIONS_DIR/$filename"
+    done
+fi
+
+{{- else }}
+:
+{{- end }}

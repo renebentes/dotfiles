@@ -133,12 +133,3 @@ if [ -d "${HOME}"/.config/bash/functions ]; then
         . "$f"
     done
 fi
-
-# Load completions
-if [ -d "${HOME}"/.config/bash/completions ]; then
-    COMPLETIONS=$(find "${HOME}"/.config/bash/completions -name '*.bash' -type f | sort -g)
-    for f in $COMPLETIONS; do
-        # shellcheck source=/dev/null
-        . "$f"
-    done
-fi
