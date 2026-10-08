@@ -4,12 +4,12 @@
 set -euo pipefail
 
 INSTALL_DIR="<auto>"
+SDK_DIR=""
 VERBOSE=false
 DRY_RUN=false
 INVENTORY_FILE=""
 SELECTED_COMPONENTS=()
-REMOVAL_PLAN_FILE=""
-
+REMOVAL_PLAN=""
 
 # Use in the the functions: eval $invocation
 # shellcheck disable=SC2016
@@ -89,15 +89,18 @@ resolve_installation_path() {
 
 usage() {
     cat <<<".NET Uninstaller
-Usage: dotnet-uninstall [ -i|--install-dir ][ -n|--dry-run ][ -h|--help ]
+Usage: dotnet-uninstall [-i|--install-dir DIR] [-n|--dry-run] [-v|--verbose] [-h|--help]
 
 dotnet-uninstall is a simple command line interface for uninstalling the .NET SDK from a specified location.
     Note that the use of this script is only for manual installation scenarios.
     Please, prefer using installers in development environment.
+    SDKs are discovered under the selected installation root's sdk/ directory.
+    The source of each SDK cannot be detected; all SDKs under that root may be
+    listed, regardless of how they were installed.
 
 Options:
   -i, --install-dir <DIR>    The location to uninstall from (see Install Location below)
-  -n, --dry-run              Do not perform uninstallation. Display file list.
+  -n, --dry-run              Do not remove anything. Display the removal plan.
   -v, --verbose              Verbose output
   -h, --help                 Shows this help message
 
@@ -157,19 +160,44 @@ inventory_sdks() {
         return 1
     fi
 
-    local line path version
+    local sdk_list
+    if ! sdk_list="$("$dotnet" --list-sdks 2>&1)"; then
+        say_err "Failed to list SDKs from '$dotnet': $sdk_list"
+        return 1
+    fi
+
+    local sdk_root="${INSTALL_DIR}/sdk"
+    if [[ ! -d "$sdk_root" ]]; then
+        say "No SDK directory found in '$INSTALL_DIR'."
+        return 0
+    fi
+
+    SDK_DIR="$(cd -- "$sdk_root" && pwd -P)"
+
+    local line reported_sdk_root version sdk_path
 
     while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+
         version="${line%% \[*}"
-        path="${line##* \[}"
-        path="${path%]}"
+        reported_sdk_root="${line##* \[}"
+        reported_sdk_root="${reported_sdk_root%]}"
 
-        say_verbose "inventory_sdks: version=$version, path=$path/$version"
+        if [[ ! "$version" =~ ^[0-9][A-Za-z0-9.+-]*$ ]]; then
+            say_warning "Ignoring unrecognized SDK version in dotnet output: '$line'"
+            continue
+        fi
 
-        [[ -d "$path/$version" ]] || continue
+        [[ -d "$reported_sdk_root" ]] || continue
+        reported_sdk_root="$(cd -- "$reported_sdk_root" && pwd -P)" || continue
+        [[ "$reported_sdk_root" == "$SDK_DIR" ]] || continue
 
-        inventory_add "sdk" "Microsoft.NET.Sdk" "$version" "$path/$version"
-    done < <("$dotnet" --list-sdks 2>/dev/null)
+        sdk_path="${SDK_DIR}/${version}"
+        [[ -d "$sdk_path" && ! -L "$sdk_path" ]] || continue
+
+        say_verbose "inventory_sdks: version=$version, path=$sdk_path"
+        inventory_add "sdk" "Microsoft.NET.Sdk" "$version" "$sdk_path"
+    done <<<"$sdk_list"
 }
 
 inventory() {
@@ -196,6 +224,12 @@ run_component_selector() {
     )
 
     tail -n +2 "$INVENTORY_FILE" | fzf "${fzf_options[@]}"
+}
+
+inventory_has_sdks() {
+    eval "$invocation"
+
+    [[ "$(awk 'END { print NR - 1 }' "$INVENTORY_FILE")" -gt 0 ]]
 }
 
 select_components() {
@@ -228,6 +262,79 @@ select_components() {
     done <<<"$selected_lines"
 
     say_verbose "Selected components: ${#SELECTED_COMPONENTS[@]}"
+}
+
+build_removal_plan() {
+    eval "$invocation"
+
+    local selected_path type name version path metadata found
+    for selected_path in "${SELECTED_COMPONENTS[@]}"; do
+        found=false
+
+        while IFS=$'\t' read -r type name version path metadata; do
+            if [[ "$path" == "$selected_path" ]]; then
+                found=true
+                break
+            fi
+        done < <(tail -n +2 "$INVENTORY_FILE")
+
+        if [[ "$found" != true ]]; then
+            say_err "Selected SDK was not found in the inventory: '$selected_path'"
+            return 1
+        fi
+
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "$type" \
+            "$name" \
+            "$version" \
+            "$path" \
+            "$metadata"
+
+        say_verbose "build_removal_plan: type=$type, name=$name, version=$version, path=$path, metadata=$metadata"
+    done
+}
+
+display_removal_plan() {
+    eval "$invocation"
+
+    say "Removal plan:"
+
+    printf '\n'
+
+    if [[ -z "$REMOVAL_PLAN" ]]; then
+        say "Nothing to remove."
+        return 0
+    fi
+
+    awk -F '\t' '{ printf "%-8s %-12s %s\n", $1, $3, $4 }' <<<"$REMOVAL_PLAN"
+
+    printf '\n'
+}
+
+remove_selected_components() {
+    eval "$invocation"
+
+    local type name version path metadata
+    while IFS=$'\t' read -r type name version path metadata; do
+        [[ -n "$path" ]] || continue
+
+        if [[ "$type" != "sdk" ||
+            "$name" != "Microsoft.NET.Sdk" ||
+            ! "$version" =~ ^[0-9][A-Za-z0-9.+-]*$ ||
+            "${path%/*}" != "$SDK_DIR" ||
+            "${path##*/}" != "$version" ||
+            ! -d "$path" ||
+            -L "$path" ]]; then
+            say_err "Refusing to remove an unexpected SDK path: '$path'"
+            return 1
+        fi
+
+        say "Removing SDK $version from '$path'."
+        if ! rm -rf -- "$path"; then
+            say_err "Failed to remove SDK $version from '$path'."
+            return 1
+        fi
+    done <<<"$REMOVAL_PLAN"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -271,20 +378,45 @@ if [[ ! -d "$INSTALL_DIR" ]]; then
     exit 0
 fi
 
+INSTALL_DIR="$(cd -- "$INSTALL_DIR" && pwd -P)"
+say_verbose "Resolved .NET installation root: '$INSTALL_DIR'"
+
 inventory
+
+if ! inventory_has_sdks; then
+    say "No SDKs found in '$INSTALL_DIR'."
+    exit 0
+fi
 
 if ! select_components; then
     say "No components selected for removal. Exiting."
     exit 0
 fi
 
+if [[ "${#SELECTED_COMPONENTS[@]}" -eq 0 ]]; then
+    say "No SDKs selected for removal. Exiting."
+    exit 0
+fi
+
 REMOVAL_PLAN="$(build_removal_plan)"
 say_verbose "Removal plan:\n$REMOVAL_PLAN"
+display_removal_plan
 
 if [[ "${DRY_RUN}" = true ]]; then
-
     say "Dry-run completed. No changes were made."
     exit 0
 fi
+
+if ! read -r -p "Remove the SDKs listed above? [y/N] " answer; then
+    say "Removal cancelled."
+    exit 0
+fi
+
+if [[ ! "$answer" =~ ^[Yy]([Ee][Ss])?$ ]]; then
+    say "Removal cancelled."
+    exit 0
+fi
+
+remove_selected_components
 
 say "Uninstallation finished successfully"
