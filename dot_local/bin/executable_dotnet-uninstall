@@ -157,7 +157,8 @@ inventory_version_directories() {
 
     [[ -d "$parent" && ! -L "$parent" ]] || return 0
 
-    for component_path in "$parent"/*; do
+    IFS=$'\n'
+    for component_path in $(printf '%s\n' "$parent"/* | sort -V); do
         [[ -d "$component_path" && ! -L "$component_path" ]] || continue
         version="${component_path##*/}"
 
@@ -168,6 +169,7 @@ inventory_version_directories() {
 
         inventory_add "$type" "$name" "$version" "$component_path"
     done
+    unset IFS
 }
 
 inventory_components() {
