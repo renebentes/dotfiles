@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# Simple command line interface for uninstalling .NET SDK from a specified location.
+# Simple command line interface for uninstalling .NET components from a specified location.
 
 set -euo pipefail
 
 INSTALL_DIR="<auto>"
-SDK_DIR=""
 VERBOSE=false
 DRY_RUN=false
 INVENTORY_FILE=""
@@ -91,12 +90,10 @@ usage() {
     cat <<<".NET Uninstaller
 Usage: dotnet-uninstall [-i|--install-dir DIR] [-n|--dry-run] [-v|--verbose] [-h|--help]
 
-dotnet-uninstall is a simple command line interface for uninstalling the .NET SDK from a specified location.
-    Note that the use of this script is only for manual installation scenarios.
-    Please, prefer using installers in development environment.
-    SDKs are discovered under the selected installation root's sdk/ directory.
-    The source of each SDK cannot be detected; all SDKs under that root may be
-    listed, regardless of how they were installed.
+dotnet-uninstall lists .NET components under the selected installation root.
+    It is intended for installations created with dotnet-install.sh.
+    The source of individual components cannot be detected. Review the selected
+    installation root carefully; removing shared components may affect other SDKs.
 
 Options:
   -i, --install-dir <DIR>    The location to uninstall from (see Install Location below)
@@ -150,54 +147,80 @@ inventory_add() {
         >>"$INVENTORY_FILE"
 }
 
-inventory_sdks() {
+inventory_version_directories() {
     eval "$invocation"
 
-    local dotnet="${INSTALL_DIR}/dotnet"
+    local type=$1
+    local name=$2
+    local parent=$3
+    local component_path version
 
-    if [[ ! -x "$dotnet" ]]; then
-        say_err ".NET cli not found at: '$dotnet'"
-        return 1
-    fi
+    [[ -d "$parent" && ! -L "$parent" ]] || return 0
 
-    local sdk_list
-    if ! sdk_list="$("$dotnet" --list-sdks 2>&1)"; then
-        say_err "Failed to list SDKs from '$dotnet': $sdk_list"
-        return 1
-    fi
-
-    local sdk_root="${INSTALL_DIR}/sdk"
-    if [[ ! -d "$sdk_root" ]]; then
-        say "No SDK directory found in '$INSTALL_DIR'."
-        return 0
-    fi
-
-    SDK_DIR="$(cd -- "$sdk_root" && pwd -P)"
-
-    local line reported_sdk_root version sdk_path
-
-    while IFS= read -r line; do
-        [[ -n "$line" ]] || continue
-
-        version="${line%% \[*}"
-        reported_sdk_root="${line##* \[}"
-        reported_sdk_root="${reported_sdk_root%]}"
+    for component_path in "$parent"/*; do
+        [[ -d "$component_path" && ! -L "$component_path" ]] || continue
+        version="${component_path##*/}"
 
         if [[ ! "$version" =~ ^[0-9][A-Za-z0-9.+-]*$ ]]; then
-            say_warning "Ignoring unrecognized SDK version in dotnet output: '$line'"
+            say_warning "Ignoring unrecognized component directory: '$component_path'"
             continue
         fi
 
-        [[ -d "$reported_sdk_root" ]] || continue
-        reported_sdk_root="$(cd -- "$reported_sdk_root" && pwd -P)" || continue
-        [[ "$reported_sdk_root" == "$SDK_DIR" ]] || continue
+        inventory_add "$type" "$name" "$version" "$component_path"
+    done
+}
 
-        sdk_path="${SDK_DIR}/${version}"
-        [[ -d "$sdk_path" && ! -L "$sdk_path" ]] || continue
+inventory_components() {
+    eval "$invocation"
 
-        say_verbose "inventory_sdks: version=$version, path=$sdk_path"
-        inventory_add "sdk" "Microsoft.NET.Sdk" "$version" "$sdk_path"
-    done <<<"$sdk_list"
+    local root component_path feature_band manifest_name manifest_path manifest_version
+
+    inventory_version_directories "sdk" "SDK" "$INSTALL_DIR/sdk"
+    inventory_version_directories "runtime" "Microsoft.NETCore.App" "$INSTALL_DIR/shared/Microsoft.NETCore.App"
+    inventory_version_directories "runtime" "Microsoft.AspNetCore.App" "$INSTALL_DIR/shared/Microsoft.AspNetCore.App"
+
+    root="$INSTALL_DIR/shared"
+    if [[ -d "$root" && ! -L "$root" ]]; then
+        for component_path in "$root"/*; do
+            [[ -d "$component_path" && ! -L "$component_path" ]] || continue
+            case "${component_path##*/}" in
+            Microsoft.NETCore.App | Microsoft.AspNetCore.App) continue ;;
+            esac
+            inventory_version_directories "runtime" "${component_path##*/}" "$component_path"
+        done
+    fi
+
+    inventory_version_directories "hostfxr" "host/fxr" "$INSTALL_DIR/host/fxr"
+
+    root="$INSTALL_DIR/packs"
+    if [[ -d "$root" && ! -L "$root" ]]; then
+        for component_path in "$root"/*; do
+            [[ -d "$component_path" && ! -L "$component_path" ]] || continue
+            inventory_version_directories "pack" "${component_path##*/}" "$component_path"
+        done
+    fi
+
+    root="$INSTALL_DIR/sdk-manifests"
+    if [[ -d "$root" && ! -L "$root" ]]; then
+        for feature_band in "$root"/*; do
+            [[ -d "$feature_band" && ! -L "$feature_band" ]] || continue
+            for manifest_path in "$feature_band"/*; do
+                [[ -d "$manifest_path" && ! -L "$manifest_path" ]] || continue
+                manifest_name="${manifest_path##*/}"
+                for component_path in "$manifest_path"/*; do
+                    [[ -d "$component_path" && ! -L "$component_path" ]] || continue
+                    manifest_version="${component_path##*/}"
+                    if [[ ! "$manifest_version" =~ ^[0-9][A-Za-z0-9.+-]*$ ]]; then
+                        say_warning "Ignoring unrecognized component directory: '$component_path'"
+                        continue
+                    fi
+                    inventory_add "manifest" "$manifest_name" "$manifest_version" "$component_path" "${feature_band##*/}"
+                done
+            done
+        done
+    fi
+
+    inventory_version_directories "template" "templates" "$INSTALL_DIR/templates"
 }
 
 inventory() {
@@ -206,7 +229,7 @@ inventory() {
     say_verbose "Inventorying .NET installation: '$INSTALL_DIR'"
 
     create_inventory
-    inventory_sdks
+    inventory_components
 }
 
 run_component_selector() {
@@ -215,18 +238,18 @@ run_component_selector() {
     local fzf_options=(
         --ansi
         --border
-        --header "Use TAB to select multiple SDKs and ENTER to confirm."
+        --header "TAB selects components; ENTER confirms. Components may be shared."
         --height=80%
         --multi
-        --prompt="Select SDKs to remove: "
+        --prompt="Select components to remove: "
         --layout=reverse
-        --with-nth="1,2,3"
+        --with-nth="1,2,3,4"
     )
 
     tail -n +2 "$INVENTORY_FILE" | fzf "${fzf_options[@]}"
 }
 
-inventory_has_sdks() {
+inventory_has_components() {
     eval "$invocation"
 
     [[ "$(awk 'END { print NR - 1 }' "$INVENTORY_FILE")" -gt 0 ]]
@@ -256,7 +279,7 @@ select_components() {
 
     SELECTED_COMPONENTS=()
 
-    while IFS=$'\t' read -r type name version path; do
+    while IFS=$'\t' read -r type name version path metadata; do
         [[ -n "$path" ]] || continue
         SELECTED_COMPONENTS+=("$path")
     done <<<"$selected_lines"
@@ -279,7 +302,7 @@ build_removal_plan() {
         done < <(tail -n +2 "$INVENTORY_FILE")
 
         if [[ "$found" != true ]]; then
-            say_err "Selected SDK was not found in the inventory: '$selected_path'"
+            say_err "Selected component was not found in the inventory: '$selected_path'"
             return 1
         fi
 
@@ -306,7 +329,7 @@ display_removal_plan() {
         return 0
     fi
 
-    awk -F '\t' '{ printf "%-8s %-12s %s\n", $1, $3, $4 }' <<<"$REMOVAL_PLAN"
+    awk -F '\t' '{ printf "%-10s %-32s %-18s %s\n", $1, $2, $3, $4 }' <<<"$REMOVAL_PLAN"
 
     printf '\n'
 }
@@ -314,24 +337,62 @@ display_removal_plan() {
 remove_selected_components() {
     eval "$invocation"
 
-    local type name version path metadata
+    local type name version path metadata expected_parent resolved_path
     while IFS=$'\t' read -r type name version path metadata; do
         [[ -n "$path" ]] || continue
 
-        if [[ "$type" != "sdk" ||
-            "$name" != "Microsoft.NET.Sdk" ||
-            ! "$version" =~ ^[0-9][A-Za-z0-9.+-]*$ ||
-            "${path%/*}" != "$SDK_DIR" ||
+        if [[ ! "$version" =~ ^[0-9][A-Za-z0-9.+-]*$ ||
             "${path##*/}" != "$version" ||
             ! -d "$path" ||
             -L "$path" ]]; then
-            say_err "Refusing to remove an unexpected SDK path: '$path'"
+            say_err "Refusing to remove an unexpected component path: '$path'"
             return 1
         fi
 
-        say "Removing SDK $version from '$path'."
+        case "$type" in
+        sdk)
+            expected_parent="$INSTALL_DIR/sdk"
+            [[ "$name" == "SDK" ]] || expected_parent=""
+            ;;
+        runtime)
+            expected_parent="$INSTALL_DIR/shared/$name"
+            ;;
+        hostfxr)
+            expected_parent="$INSTALL_DIR/host/fxr"
+            [[ "$name" == "host/fxr" ]] || expected_parent=""
+            ;;
+        pack)
+            expected_parent="$INSTALL_DIR/packs/$name"
+            ;;
+        manifest)
+            expected_parent="$INSTALL_DIR/sdk-manifests/$metadata/$name"
+            ;;
+        template)
+            expected_parent="$INSTALL_DIR/templates"
+            [[ "$name" == "templates" ]] || expected_parent=""
+            ;;
+        *)
+            expected_parent=""
+            ;;
+        esac
+
+        if [[ -z "$expected_parent" ||
+            "${path%/*}" != "$expected_parent" ||
+            ! -d "$expected_parent" ||
+            -L "$expected_parent" ]]; then
+            say_err "Refusing to remove a component outside the expected installation layout: '$path'"
+            return 1
+        fi
+
+        resolved_path="$(cd -- "$path" && pwd -P)"
+        if [[ "$resolved_path" != "$path" ]]; then
+            say_err "Refusing to remove a component reached through a symbolic link: '$path'"
+            return 1
+        fi
+
+        say "Removing $type $name $version from '$path'."
         if ! rm -rf -- "$path"; then
-            say_err "Failed to remove SDK $version from '$path'."
+            say_err "Failed to remove component '$path'."
             return 1
         fi
     done <<<"$REMOVAL_PLAN"
@@ -383,10 +444,12 @@ say_verbose "Resolved .NET installation root: '$INSTALL_DIR'"
 
 inventory
 
-if ! inventory_has_sdks; then
-    say "No SDKs found in '$INSTALL_DIR'."
+if ! inventory_has_components; then
+    say "No removable .NET components found in '$INSTALL_DIR'."
     exit 0
 fi
+
+say_warning "Components can be shared by multiple SDKs or runtimes. Review the removal plan carefully."
 
 if ! select_components; then
     say "No components selected for removal. Exiting."
@@ -394,7 +457,7 @@ if ! select_components; then
 fi
 
 if [[ "${#SELECTED_COMPONENTS[@]}" -eq 0 ]]; then
-    say "No SDKs selected for removal. Exiting."
+    say "No components selected for removal. Exiting."
     exit 0
 fi
 
@@ -407,7 +470,7 @@ if [[ "${DRY_RUN}" = true ]]; then
     exit 0
 fi
 
-if ! read -r -p "Remove the SDKs listed above? [y/N] " answer; then
+if ! read -r -p "Remove the components listed above? [y/N] " answer; then
     say "Removal cancelled."
     exit 0
 fi
