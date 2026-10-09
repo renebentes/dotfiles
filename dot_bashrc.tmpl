@@ -133,3 +133,9 @@ if [ -d "${HOME}"/.config/bash/functions ]; then
         . "$f"
     done
 fi
+
+# dotnetup: begin
+if [ -x '$HOME/.dotnetup/dotnetup' ]; then
+    eval "$('$HOME/.dotnetup/dotnetup' env script --shell bash --dotnet --dotnetup)"
+fi
+# dotnetup: end

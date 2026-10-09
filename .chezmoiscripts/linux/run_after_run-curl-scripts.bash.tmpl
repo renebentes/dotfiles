@@ -1,0 +1,18 @@
+{{ if (and (eq .chezmoi.os "linux") ( lookPath "brew")) -}}
+#!/usr/bin/env bash
+# ~/.local/share/chezmoi/run_after_run-curl-scripts.bash
+# ============================================================================
+# Runs after `chezmoi apply` to auto run downloaded scripts via curl on
+# Linux.
+#
+# Chezmoi will skip this script on other operating systems.
+#
+# See https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
+
+{{ range .packages.linux.external -}}
+curl -fsSL {{ . }} | bash
+{{ end -}}
+
+{{- else }}
+:
+{{- end }}

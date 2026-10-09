@@ -25,3 +25,10 @@ fi
 if [ -d "$HOME/.local/bin" ]; then
     PATH="$HOME/.local/bin:$PATH"
 fi
+
+# dotnetup: begin
+if [ -x '$HOME/.dotnetup/dotnetup' ]; then
+    eval "$('$HOME/.dotnetup/dotnetup' env script --shell bash --dotnet --dotnetup)"
+fi
+# dotnetup: end
+
