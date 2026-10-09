@@ -94,6 +94,8 @@ dotnet-uninstall lists .NET components under the selected installation root.
     It is intended for installations created with dotnet-install.sh.
     The source of individual components cannot be detected. Review the selected
     installation root carefully; removing shared components may affect other SDKs.
+    SDK manifests are removed as a feature-band group when no SDK from that band
+    will remain; pre-existing orphaned manifest bands are included in the plan.
 
 Options:
   -i, --install-dir <DIR>    The location to uninstall from (see Install Location below)
@@ -147,13 +149,26 @@ inventory_add() {
         >>"$INVENTORY_FILE"
 }
 
+sdk_feature_band() {
+    local version=$1
+    local major minor patch band_patch
+
+    if [[ "$version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)([-+].*)?$ ]]; then
+        major="${BASH_REMATCH[1]}"
+        minor="${BASH_REMATCH[2]}"
+        patch="${BASH_REMATCH[3]}"
+        band_patch=$((10#$patch / 100 * 100))
+        printf '%s.%s.%03d\n' "$major" "$minor" "$band_patch"
+    fi
+}
+
 inventory_version_directories() {
     eval "$invocation"
 
     local type=$1
     local name=$2
     local parent=$3
-    local component_path version
+    local component_path version metadata
 
     [[ -d "$parent" && ! -L "$parent" ]] || return 0
 
@@ -167,7 +182,11 @@ inventory_version_directories() {
             continue
         fi
 
-        inventory_add "$type" "$name" "$version" "$component_path"
+        metadata=""
+        if [[ "$type" == "sdk" ]]; then
+            metadata="$(sdk_feature_band "$version")"
+        fi
+        inventory_add "$type" "$name" "$version" "$component_path" "$metadata"
     done
     unset IFS
 }
@@ -175,7 +194,7 @@ inventory_version_directories() {
 inventory_components() {
     eval "$invocation"
 
-    local root component_path feature_band manifest_name manifest_path manifest_version
+    local root component_path feature_band manifest_name manifest_path manifest_version band sdk_band
 
     inventory_version_directories "sdk" "SDK" "$INSTALL_DIR/sdk"
     inventory_version_directories "runtime" "Microsoft.NETCore.App" "$INSTALL_DIR/shared/Microsoft.NETCore.App"
@@ -206,6 +225,21 @@ inventory_components() {
     if [[ -d "$root" && ! -L "$root" ]]; then
         for feature_band in "$root"/*; do
             [[ -d "$feature_band" && ! -L "$feature_band" ]] || continue
+            band="${feature_band##*/}"
+            sdk_band="$(sdk_feature_band "$band")"
+
+            if [[ -n "$sdk_band" && "$sdk_band" != "$band" ]]; then
+                say_warning "Ignoring unrecognized SDK manifest feature band: '$feature_band'"
+                sdk_band=""
+            fi
+
+            if [[ -n "$sdk_band" ]] &&
+                ! awk -F '\t' -v band="$sdk_band" \
+                    '$1 == "sdk" && $5 == band { found = 1 } END { exit !found }' "$INVENTORY_FILE"; then
+                inventory_add "manifest-band" "sdk-manifests" "$band" "$feature_band" "$band"
+                continue
+            fi
+
             for manifest_path in "$feature_band"/*; do
                 [[ -d "$manifest_path" && ! -L "$manifest_path" ]] || continue
                 manifest_name="${manifest_path##*/}"
@@ -292,7 +326,12 @@ select_components() {
 build_removal_plan() {
     eval "$invocation"
 
-    local selected_path type name version path metadata found
+    local selected_path type name version path metadata found feature_band band_path
+    local -A selected_paths=()
+    local -A remaining_bands=()
+    local -A swept_bands=()
+    local -A planned_paths=()
+
     for selected_path in "${SELECTED_COMPONENTS[@]}"; do
         found=false
 
@@ -308,15 +347,55 @@ build_removal_plan() {
             return 1
         fi
 
-        printf '%s\t%s\t%s\t%s\t%s\n' \
-            "$type" \
-            "$name" \
-            "$version" \
-            "$path" \
-            "$metadata"
-
-        say_verbose "build_removal_plan: type=$type, name=$name, version=$version, path=$path, metadata=$metadata"
+        selected_paths["$selected_path"]=1
     done
+
+    while IFS=$'\t' read -r type name version path metadata; do
+        [[ "$type" == "sdk" && -n "$metadata" ]] || continue
+        if [[ -z "${selected_paths[$path]+present}" ]]; then
+            remaining_bands["$metadata"]=1
+        fi
+    done < <(tail -n +2 "$INVENTORY_FILE")
+
+    while IFS=$'\t' read -r type name version path metadata; do
+        [[ "$type" == "manifest-band" ]] || continue
+        if [[ -z "${remaining_bands[$metadata]+present}" ]]; then
+            swept_bands["$metadata"]=1
+        fi
+    done < <(tail -n +2 "$INVENTORY_FILE")
+
+    while IFS=$'\t' read -r type name version path metadata; do
+        [[ "$type" == "sdk" && -n "$metadata" ]] || continue
+        if [[ -z "${remaining_bands[$metadata]+present}" &&
+            -d "$INSTALL_DIR/sdk-manifests/$metadata" &&
+            ! -L "$INSTALL_DIR/sdk-manifests/$metadata" ]]; then
+            swept_bands["$metadata"]=1
+        fi
+    done < <(tail -n +2 "$INVENTORY_FILE")
+
+    while IFS=$'\t' read -r type name version path metadata; do
+        [[ -n "$path" && -n "${selected_paths[$path]+present}" ]] || continue
+        if [[ "$type" == "manifest" && -n "${swept_bands[$metadata]+present}" ]]; then
+            continue
+        fi
+
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "$type" "$name" "$version" "$path" "$metadata"
+        planned_paths["$path"]=1
+    done < <(tail -n +2 "$INVENTORY_FILE")
+
+    for band_path in "$INSTALL_DIR"/sdk-manifests/*; do
+        [[ -d "$band_path" && ! -L "$band_path" ]] || continue
+        feature_band="${band_path##*/}"
+        [[ -n "${swept_bands[$feature_band]+present}" ]] || continue
+        [[ -n "${planned_paths[$band_path]+present}" ]] && continue
+
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "manifest-band" "sdk-manifests" "$feature_band" "$band_path" "$feature_band"
+        planned_paths["$band_path"]=1
+    done
+
+    say_verbose "build_removal_plan: planned ${#planned_paths[@]} components"
 }
 
 display_removal_plan() {
@@ -368,6 +447,10 @@ remove_selected_components() {
             ;;
         manifest)
             expected_parent="$INSTALL_DIR/sdk-manifests/$metadata/$name"
+            ;;
+        manifest-band)
+            expected_parent="$INSTALL_DIR/sdk-manifests"
+            [[ "$name" == "sdk-manifests" && "$metadata" == "$version" ]] || expected_parent=""
             ;;
         template)
             expected_parent="$INSTALL_DIR/templates"
