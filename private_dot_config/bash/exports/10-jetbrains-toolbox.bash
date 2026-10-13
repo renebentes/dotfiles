@@ -1,3 +1,7 @@
 # Added by Toolbox App
-[ -d $HOME/.local/share/JetBrains/Toolbox/scripts ] &&
-    export PATH="$PATH:$HOME/.local/share/JetBrains/Toolbox/scripts"
+toolbox_bin="$HOME/.local/share/JetBrains/Toolbox/scripts"
+if [[ -d "$toolbox_bin" ]]; then
+    PATH="${PATH:+$PATH:}$toolbox_bin"
+    export PATH
+fi
+unset toolbox_bin
