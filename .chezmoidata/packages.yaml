@@ -23,3 +23,6 @@ packages:
       - Microsoft.VisualStudio.Community.Insiders
       - OpenVPNTechnologies.OpenVPNConnect
       - sharkdp.bat
+  linux:
+    external:
+      - https://aka.ms/dotnetup/get-dotnetup.sh

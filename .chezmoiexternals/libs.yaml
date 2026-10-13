@@ -10,8 +10,5 @@
   include:
     - "*/install.sh"
     - "*/uninstall.sh"
-    - "*/.helpers"
-    - "*/**/.multiselect-menu.sh"
-
 # prettier-ignore
 {{- end }}
