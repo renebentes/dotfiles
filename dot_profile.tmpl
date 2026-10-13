@@ -32,8 +32,8 @@ if [ -n "$BASH_VERSION" ] && [ -f "$HOME/.config/bash/load-environment.bash" ]; 
 fi
 
 # dotnetup: begin
-if [ -x '$HOME/.dotnetup/dotnetup' ]; then
-    eval "$('$HOME/.dotnetup/dotnetup' env script --shell bash --dotnet --dotnetup)"
+if [ -x "$HOME/.dotnetup/dotnetup" ]; then
+    eval "$("$HOME/.dotnetup/dotnetup" env script --shell bash --dotnet --dotnetup)"
 fi
 # dotnetup: end
 
