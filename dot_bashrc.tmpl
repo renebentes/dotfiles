@@ -124,6 +124,14 @@ for f in "$HOME"/.config/bash/exports/*.bash; do
 done
 unset f
 
+# Load interactive shell configuration
+for f in "$HOME"/.config/bash/interactive/*.bash; do
+    [[ -f "$f" ]] || continue
+    # shellcheck source=/dev/null
+    . "$f"
+done
+unset f
+
 # Load custom functions
 for f in "$HOME"/.config/bash/functions/*.bash; do
     [[ -f "$f" ]] || continue
