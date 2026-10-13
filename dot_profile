@@ -25,3 +25,8 @@ fi
 if [ -d "$HOME/.local/bin" ]; then
     PATH="$HOME/.local/bin:$PATH"
 fi
+
+if [ -n "$BASH_VERSION" ] && [ -f "$HOME/.config/bash/load-environment.bash" ]; then
+    # shellcheck source=/dev/null
+    . "$HOME/.config/bash/load-environment.bash"
+fi
