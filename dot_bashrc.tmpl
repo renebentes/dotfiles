@@ -136,3 +136,9 @@ for f in "$HOME"/.config/bash/functions/*.bash; do
     . "$f"
 done
 unset f
+
+# dotnetup: begin
+if [ -x "$HOME/.dotnetup/dotnetup" ]; then
+    eval "$("$HOME/.dotnetup/dotnetup" env script --shell bash --dotnet --dotnetup)"
+fi
+# dotnetup: end
