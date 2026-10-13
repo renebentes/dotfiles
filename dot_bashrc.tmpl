@@ -117,19 +117,17 @@ if ! shopt -oq posix; then
 fi
 
 # Load exports
-if [ -d "${HOME}"/.config/bash/exports ]; then
-    EXPORTS=$(find "${HOME}"/.config/bash/exports -name '*.bash' -type f | sort -g)
-    for f in $EXPORTS; do
-        # shellcheck source=/dev/null
-        . "$f"
-    done
-fi
+for f in "$HOME"/.config/bash/exports/*.bash; do
+    [[ -f "$f" ]] || continue
+    # shellcheck source=/dev/null
+    . "$f"
+done
+unset f
 
 # Load custom functions
-if [ -d "${HOME}"/.config/bash/functions ]; then
-    FUNCTIONS=$(find "${HOME}"/.config/bash/functions -name '*.bash' -type f | sort -g)
-    for f in $FUNCTIONS; do
-        # shellcheck source=/dev/null
-        . "$f"
-    done
-fi
+for f in "$HOME"/.config/bash/functions/*.bash; do
+    [[ -f "$f" ]] || continue
+    # shellcheck source=/dev/null
+    . "$f"
+done
+unset f
