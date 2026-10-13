@@ -116,13 +116,10 @@ if ! shopt -oq posix; then
   fi
 fi
 
-# Load exports
-for f in "$HOME"/.config/bash/exports/*.bash; do
-    [[ -f "$f" ]] || continue
+if [[ -f "$HOME/.config/bash/load-environment.bash" ]]; then
     # shellcheck source=/dev/null
-    . "$f"
-done
-unset f
+    . "$HOME/.config/bash/load-environment.bash"
+fi
 
 # Load interactive shell configuration
 for f in "$HOME"/.config/bash/interactive/*.bash; do
