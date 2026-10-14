@@ -1,4 +1,3 @@
-{{ if (eq .chezmoi.os "linux") -}}
 #!/usr/bin/env bash
 # ~/.local/share/chezmoi/run_after_install-binary-external-packages.bash
 # ============================================================================
@@ -14,7 +13,3 @@
 {{ range .packages.linux.external -}}
 curl -fsSL {{ . }} | bash
 {{ end -}}
-
-{{- else }}
-:
-{{- end }}

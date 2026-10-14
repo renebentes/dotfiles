@@ -6,7 +6,7 @@
 #
 
 [user]
-    name = "{{ .name }}"
+    name = "Rene B. Pinto"
     email = "{{ .email }}"
     signingkey = "{{ .key }}"
 
@@ -16,7 +16,7 @@
 
 [core]
     editor = code --wait
-    {{- if eq .chezmoi.os "windows" }}
+    {{- if .isWindows }}
     autocrlf = true
     {{- else }}
     autocrlf = input
@@ -34,9 +34,9 @@
     path = ~/.gitaliases
 
 [credential]
-    {{- if eq .chezmoi.os "linux" }}
+    {{- if (.isLinux) }}
     credentialStore = gpg
-    {{-   if (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
+    {{-   if (.isWsl) }}
     helper = /mnt/c/Program\\ Files/Git/mingw64/bin/git-credential-manager.exe
     {{-   else }}
     helper = /usr/local/bin/git-credential-manager
@@ -55,9 +55,9 @@
 [init]
     defaultBranch = main
 [gpg]
-    {{- if eq .chezmoi.os "windows" }}
+    {{- if (.isWindows) }}
     program = C:\\Program Files\\GnuPG\\bin\\gpg.exe
-    {{- else if (and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | lower | contains "microsoft")) }}
+    {{- else if (.isWsl) }}
     program = /mnt/c/Program\\ Files\\/GnuPG/bin/gpg.exe
     {{- end }}
 [checkout]
