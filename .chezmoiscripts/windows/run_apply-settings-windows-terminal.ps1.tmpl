@@ -1,4 +1,3 @@
-{{ if eq .chezmoi.os "windows" -}}
 # ~/.local/share/chezmoi/run_apply-settings-windows-terminal.ps1
 # ============================================================================
 # Runs when you execute `chezmoi apply` to apply settings to Windows Terminal.
@@ -11,5 +10,3 @@ $SourceFile = "$env:USERPROFILE\.config\windows-terminal\settings.json"
 $DestinationFile = "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json"
 
 Copy-Item $SourceFile $DestinationFile
-
-{{- end }}

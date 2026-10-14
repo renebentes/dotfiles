@@ -8,10 +8,12 @@
 # See https://www.chezmoi.io/docs/how-to/
 
 {{- $email := promptStringOnce . "email" "Your email address" -}}
-{{- $name := promptStringOnce . "name" "Your name" -}}
-{{- $key := promptStringOnce . "key" "Your GPG key" }}
+{{- $key := promptStringOnce . "key" "Your GPG key" -}}
+{{- $isWindows := (eq .chezmoi.os "windows") -}}
+{{- $isLinux := (eq .chezmoi.os "linux") -}}
+{{- $isWsl := (and (eq .chezmoi.os "linux") (.chezmoi.kernel.osrelease | contains "[Mm]icrosoft")) }}
 
-{{ if eq .chezmoi.os "windows" -}}
+{{ if $isWindows -}}
 cd:
   command: "pwsh"
   args: ["-NoLogo", "-NoExit", "-Command", "& {Set-Location $env:HOMEPATH/.local/share/chezmoi}"]
@@ -19,5 +21,7 @@ cd:
 
 data:
   email: {{ $email | quote }}
-  name: {{ $name | quote }}
   key: {{ $key | quote }}
+  isWindows: {{ $isWindows }}
+  isLinux: {{ $isLinux }}
+  isWsl: {{ $isWsl }}

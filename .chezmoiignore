@@ -1,2 +1,15 @@
+{{ if .isWindows -}}
+.chezmoiscripts/linux/**
+.config/bash/**
+.local/bin/**
+.local/share/**
+.bashrc
+.profile
+{{ else -}}
+.chezmoiscripts/windows/**
+.config/powershell/**
+.config/windows-terminal/**
+{{ end -}}
+
 LICENSE
 README.md
