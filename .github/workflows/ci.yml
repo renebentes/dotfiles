@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  static-checks:
+    name: Bash and PowerShell
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Install chezmoi
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/chezmoi-bin"
+          sh -c "$(curl -fsLS https://get.chezmoi.io)" -- \
+            -b "$RUNNER_TEMP/chezmoi-bin"
+          echo "$RUNNER_TEMP/chezmoi-bin" >> "$GITHUB_PATH"
+
+      - name: Render Bash and PowerShell templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          rendered="$RUNNER_TEMP/chezmoi-rendered"
+          mkdir -p "$rendered/bash" "$rendered/powershell"
+          templates=(
+              .chezmoiscripts/**/*.tmpl
+              dot_local/**/*.tmpl
+              dot_bashrc.tmpl
+              dot_profile.tmpl
+          )
+
+          for source in "${templates[@]}"; do
+              [[ "$source" == "./.git/"* ]] && continue
+
+              case "$source" in
+              *.bash.tmpl | dot_bashrc.tmpl | dot_profile.tmpl | dot_local/share/bash-completion/completions/*.tmpl)
+                  target="$rendered/bash/${source%.tmpl}"
+                  ;;
+              *.ps1.tmpl)
+                  target="$rendered/powershell/${source%.tmpl}"
+                  ;;
+              *)
+                  continue
+                  ;;
+              esac
+
+              mkdir -p "$(dirname "$target")"
+
+              chezmoi execute-template \
+                  --source "./" \
+                  --init \
+                  --promptString 'email=ci@example.invalid,key=ci-test' \
+                  --override-data-file "./.chezmoidata/packages.yaml" \
+                  --file "$source" \
+                  --output "$target"
+          done
+
+      - name: Check Bash syntax and run ShellCheck
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s globstar nullglob
+
+          files=(
+              dot_local/bin/executable_*
+              private_dot_config/bash/**/*.bash
+              "$RUNNER_TEMP"/chezmoi-rendered/bash/**/*.bash
+              "$RUNNER_TEMP"/chezmoi-rendered/bash/dot_bashrc
+              "$RUNNER_TEMP"/chezmoi-rendered/bash/dot_profile
+          )
+
+          if ((${#files[@]} == 0)); then
+              echo "::error::No bash files found."
+              exit 1
+          fi
+
+          bash -n "${files[@]}"
+          shellcheck --shell=bash --severity=error "${files[@]}"
+
+      - name: Run PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          Set-StrictMode -Version Latest
+
+          $files = @(
+            Get-ChildItem -LiteralPath . -Recurse -File -Filter '*.ps1' -Force |
+              Where-Object { $_.FullName -notmatch '[/\\]\.git[/\\]' } |
+              Select-Object -ExpandProperty FullName
+          )
+
+          $renderedPath = "$env:RUNNER_TEMP/chezmoi-rendered/powershell"
+
+          if (Test-Path -LiteralPath $renderedPath) {
+            $files += @(
+              Get-ChildItem -LiteralPath $renderedPath -Recurse -File -Filter '*.ps1' -Force |
+                Select-Object -ExpandProperty FullName
+            )
+          }
+
+          if ($files.Count -eq 0) {
+            Write-Host "::error::No PowerShell files found."
+            exit 1
+          }
+
+          $findings = @(
+            foreach ($file in $files) {
+              Invoke-ScriptAnalyzer -Path $file -Severity Error -ErrorAction SilentlyContinue
+            }
+          )
+
+          if ($findings.Count -gt 0) {
+            $findings | Format-Table -AutoSize | Out-String | Write-Host -ForegroundColor Red
+            exit 1
+          }
