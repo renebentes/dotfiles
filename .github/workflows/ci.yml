@@ -120,7 +120,9 @@ jobs:
           }
 
           $findings = @(
-            Invoke-ScriptAnalyzer -Path $files -Severity Error -ErrorAction SilentlyContinue
+            foreach ($file in $files) {
+              Invoke-ScriptAnalyzer -Path $file -Severity Error -ErrorAction SilentlyContinue
+            }
           )
 
           if ($findings.Count -gt 0) {
